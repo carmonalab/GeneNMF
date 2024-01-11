@@ -20,12 +20,12 @@
 #' @return Returns a list of NMF results
 #'
 #' @examples
-#' # NMF_results <- runNMF(obj.list)
+#' # NMF_results <- multiNMF(obj.list)
 #' 
 #' @importFrom RcppML nmf
 #' @export  
 
-runNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
+multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
                    calculate_hvg=TRUE, do_centering=TRUE,
                    exclude_ribo_mito=FALSE, seed=123) {
@@ -33,7 +33,7 @@ runNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   set.seed(seed)
   
   if (calculate_hvg & is.null(hvg)) {
-    hvg <- FindHVG(obj.list, nfeatures=nfeatures)
+    hvg <- findHVG(obj.list, nfeatures=nfeatures)
   }
   
   nmf.res <- lapply(seu.list, function(this) {
@@ -62,9 +62,9 @@ runNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 
 #' Get list of genes for each NMF program
 #'
-#' Run it over a list of NMF models obtained using `runNMF`
+#' Run it over a list of NMF models obtained using `multiNMF`
 #'
-#' @param nmf.res A list of NMF models obtained from `runNMF`
+#' @param nmf.res A list of NMF models obtained from `multiNMF`
 #' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
 #'     for each program
 #' @param max.genes Max number of genes for each programs     
@@ -99,10 +99,10 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 
 #' Get consensus gene signature for conserved gene programs
 #'
-#' Run it over a list of NMF models obtained using `runNMF`; it will determine
+#' Run it over a list of NMF models obtained using `multiNMF`; it will determine
 #' gene programs that are consistently observed across samples and values of k.
 #'
-#' @param nmf.res A list of NMF models obtained from `runNMF`
+#' @param nmf.res A list of NMF models obtained from `multiNMF`
 #' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
 #'     for each program
 #' @param max.genes Max number of genes for each programs
@@ -127,7 +127,6 @@ getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
                                     min.confidence=0.5,
                                     return.coverage=FALSE,
                                     plot.tree=TRUE, return.tree=FALSE) {
-  set.seed(123)
   nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
   
   nprogs <- length(nmf.genes)
@@ -185,11 +184,11 @@ getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
 
 #' Plot heatmap of similarity between NMF programs
 #'
-#' Run it over a list of NMF models obtained using `runNMF`; it plots the Jaccard Index
+#' Run it over a list of NMF models obtained using `multiNMF`; it plots the Jaccard Index
 #' similarity between all pairs of programs calculated over different samples and different
 #' values of k.
 #'
-#' @param nmf.res A list of NMF models obtained from `runNMF`
+#' @param nmf.res A list of NMF models obtained from `multiNMF`
 #' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
 #'     for each program
 #' @param max.genes Max number of genes for each programs
@@ -263,7 +262,9 @@ runGSEA <- function(genes, universe=NULL,
   }
   
   msig_df <- msigdbr::msigdbr(species = "Homo sapiens", category = category, subcategory=subcategory)
-  msig_list <- msig_df |> dplyr::split(x = .$gene_symbol, f = .$gs_name)
+  
+  #msig_list <- msig_df %>% split(x = .$gene_symbol, f = .$gs_name)
+  msig_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
   
   fgRes <- fgsea::fora(pathways = msig_list,
                        genes = genes,
@@ -283,11 +284,8 @@ runGSEA <- function(genes, universe=NULL,
 #' @param assay Get data matrix from this assay
 #' @param slot Get data matrix from this slot (=layer)
 #' @param k Number of components for low-dim representation
+#' @param hvg Which genes to use for the reduction
 #' @param new.reduction Name of new dimensionality reduction
-#' @param calculate_hvg Whether to compute highly variable features
-#' @param hvg List of pre-calculated variable genes to subset the matrix.
-#'     If hvg=NULL and calculate_hvg=NULL, uses all genes.
-#' @param nfeatures Number of HVG, if calculate_hvg=TRUE
 #' @param do_centering Whether to center the data matrix
 #' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
 #'     data matrix
@@ -297,19 +295,22 @@ runGSEA <- function(genes, universe=NULL,
 #'
 #' @examples
 #' # seurat <- RunNMF(seurat, k=8)
-#' @importFrom RccpML nmf
+#' @importFrom RcppML nmf
 #' @export  
 RunNMF <- function(obj, assay="RNA", slot="data", k=10,
-                   new.reduction="NMF",
-                   hvg=NULL, nfeatures = 2000, L1=c(0,0),
-                   do_centering=TRUE, calculate_hvg=TRUE,
+                   new.reduction="NMF", seed=123,
+                   L1=c(0,0), hvg=NULL,
+                   do_centering=TRUE,
                    exclude_ribo_mito=FALSE) {
   
   
   set.seed(seed)
   
-  if (calculate_hvg & is.null(hvg)) {
-    hvg <- FindHVG(obj.list, nfeatures=nfeatures)
+  if (is.null(hvg)) {
+    hvg <- VariableFeatures(obj, assay=assay)
+  }
+  if (is.null(hvg) | length(hvg)==0) {
+    stop("No variable features found. Please run FindVariableFeatures() or specify genes with 'hvg' parameter")
   }
   
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
@@ -334,9 +335,6 @@ RunNMF <- function(obj, assay="RNA", slot="data", k=10,
                                          global = FALSE)
   return(obj)
 }  
-
-
-
 
 #' Extract data matrix from Seurat object
 #'

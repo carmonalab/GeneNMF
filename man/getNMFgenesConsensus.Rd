@@ -17,7 +17,7 @@ getNMFgenesConsensus(
 )
 }
 \arguments{
-\item{nmf.res}{A list of NMF models obtained from `runNMF`}
+\item{nmf.res}{A list of NMF models obtained from `multiNMF`}
 
 \item{method}{Parameter passed to `NMF::extractFeatures` to obtain top genes
 for each program}
@@ -41,7 +41,7 @@ in the consensus metaprograms}
 Returns a list of top genes for each gene program
 }
 \description{
-Run it over a list of NMF models obtained using `runNMF`; it will determine
+Run it over a list of NMF models obtained using `multiNMF`; it will determine
 gene programs that are consistently observed across samples and values of k.
 }
 \examples{

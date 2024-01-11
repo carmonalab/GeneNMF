@@ -10,11 +10,10 @@ RunNMF(
   slot = "data",
   k = 10,
   new.reduction = "NMF",
-  hvg = NULL,
-  nfeatures = 2000,
+  seed = 123,
   L1 = c(0, 0),
+  hvg = NULL,
   do_centering = TRUE,
-  calculate_hvg = TRUE,
   exclude_ribo_mito = FALSE
 )
 }
@@ -29,21 +28,16 @@ RunNMF(
 
 \item{new.reduction}{Name of new dimensionality reduction}
 
-\item{hvg}{List of pre-calculated variable genes to subset the matrix.
-If hvg=NULL and calculate_hvg=NULL, uses all genes.}
-
-\item{nfeatures}{Number of HVG, if calculate_hvg=TRUE}
+\item{seed}{Random seed}
 
 \item{L1}{L1 regularization term for NMF}
 
-\item{do_centering}{Whether to center the data matrix}
+\item{hvg}{Which genes to use for the reduction}
 
-\item{calculate_hvg}{Whether to compute highly variable features}
+\item{do_centering}{Whether to center the data matrix}
 
 \item{exclude_ribo_mito}{Exclude ribosomal and mitochondrial genes from
 data matrix}
-
-\item{seed}{Random seed}
 }
 \value{
 Returns a Seurat object with a new dimensionality reduction (NMF)

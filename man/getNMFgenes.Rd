@@ -7,7 +7,7 @@
 getNMFgenes(nmf.res, method = 0.5, max.genes = 50)
 }
 \arguments{
-\item{nmf.res}{A list of NMF models obtained from `runNMF`}
+\item{nmf.res}{A list of NMF models obtained from `multiNMF`}
 
 \item{method}{Parameter passed to `NMF::extractFeatures` to obtain top genes
 for each program}
@@ -18,7 +18,7 @@ for each program}
 Returns a list of top genes for each gene program
 }
 \description{
-Run it over a list of NMF models obtained using `runNMF`
+Run it over a list of NMF models obtained using `multiNMF`
 }
 \examples{
 # nmf_genes <- getNMFgenes(nmf_results.list)

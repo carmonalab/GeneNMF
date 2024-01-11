@@ -13,7 +13,7 @@ getNMFheatmap(
 )
 }
 \arguments{
-\item{nmf.res}{A list of NMF models obtained from `runNMF`}
+\item{nmf.res}{A list of NMF models obtained from `multiNMF`}
 
 \item{method}{Parameter passed to `NMF::extractFeatures` to obtain top genes
 for each program}
@@ -28,7 +28,7 @@ for each program}
 Returns a heatmap visualization of similarity between gene programs
 }
 \description{
-Run it over a list of NMF models obtained using `runNMF`; it plots the Jaccard Index
+Run it over a list of NMF models obtained using `multiNMF`; it plots the Jaccard Index
 similarity between all pairs of programs calculated over different samples and different
 values of k.
 }

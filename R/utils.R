@@ -25,8 +25,8 @@ getEntropy <- function(tab, pseudo=0.1) {
 #Find highly variable genes in a list of Seurat objects
 findHVG <- function(obj.list, nfeatures=2000) {
   obj.list <- lapply(obj.list, function(x){
-    FindVariableFeatures.STACAS(x, nfeat=nfeatures)
+    Seurat::FindVariableFeatures(x, nfeat=nfeatures)
   })
-  hvg <- SelectIntegrationFeatures(obj.list, nfeatures = nfeatures)
+  hvg <- Seurat::SelectIntegrationFeatures(obj.list, nfeatures = nfeatures)
   return(hvg)
 }
