@@ -1,0 +1,31 @@
+Package: GeneNMF
+Type: Package
+Title: Non-negative matrix factorization for single-cell omics
+Version: 0.1
+Authors@R: c(
+  person('Massimo', 'Andreatta',
+    email = 'massimo.andreatta@unil.ch',
+    role = c('aut','cre'),
+    comment = c(ORCID = '0000-0002-8036-2647'))
+  )
+Description: A collection of methods to extract gene programs from single-cell gene expression data using non-negative matrix factorization (NMF). It contains functions to directly interact with the Seurat toolkit and derive interpretable gene program signatures.
+biocViews:
+Depends: R (>= 4.3.0)
+Imports: RcppML,
+    NMF,
+    Matrix,
+    stats,
+    Seurat (>= 4.3.0)
+Suggests: knitr,
+    rmarkdown,
+    dendextend,
+    fgsea,
+    dplyr,
+    msigdbr
+VignetteBuilder: knitr
+URL: https://github.com/carmonalab/GeneNMF
+BugReports: https://github.com/carmonalab/GeneNMF/issues
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3

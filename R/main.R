@@ -1,0 +1,381 @@
+#' RunNMF on a list of Seurat objects
+#'
+#' Get the gene expression matrix from a Seurat object, optionally centered
+#' and/or subset on highly variable genes
+#'
+#' @param obj.list A list of Seurat objects
+#' @param assay Get data matrix from this assay
+#' @param slot Get data matrix from this slot (=layer)
+#' @param calculate_hvg Whether to compute highly variable features
+#' @param hvg List of pre-calculated variable genes to subset the matrix.
+#'     If hvg=NULL and calculate_hvg=NULL, uses all genes.
+#' @param nfeatures Number of HVG, if calculate_hvg=TRUE
+#' @param do_centering Whether to center the data matrix
+#' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
+#'     data matrix
+#' @param L1 L1 regularization term for NMF
+#' @param k Number of target components for NMF (can be a vector)
+#' @param seed Random seed     
+#'     
+#' @return Returns a list of NMF results
+#'
+#' @examples
+#' # NMF_results <- runNMF(obj.list)
+#' 
+#' @importFrom RcppML nmf
+#' @export  
+
+runNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
+                   hvg=NULL, nfeatures = 2000, L1=c(0,0),
+                   calculate_hvg=TRUE, do_centering=TRUE,
+                   exclude_ribo_mito=FALSE, seed=123) {
+  
+  set.seed(seed)
+  
+  if (calculate_hvg & is.null(hvg)) {
+    hvg <- FindHVG(obj.list, nfeatures=nfeatures)
+  }
+  
+  nmf.res <- lapply(seu.list, function(this) {
+    
+    mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
+                      hvg=hvg, do_centering=do_centering,
+                      exclude_ribo_mito=exclude_ribo_mito)
+    
+    res.k <- lapply(k, function(k.this) {
+      
+      model <- RcppML::nmf(mat, k = k.this, L1 = L1)
+      
+      rownames(model$h) <- paste0("pattern",1:nrow(model$h))
+      colnames(model$h) <- colnames(mat)
+      rownames(model$w) <- rownames(mat)
+      colnames(model$w) <- paste0("pattern",1:ncol(model$w))
+      model
+    })
+    names(res.k) <- paste0("k",k)
+    res.k
+  })
+  nmf.res <- unlist(nmf.res, recursive = F)
+  
+  return(nmf.res)
+}  
+
+#' Get list of genes for each NMF program
+#'
+#' Run it over a list of NMF models obtained using `runNMF`
+#'
+#' @param nmf.res A list of NMF models obtained from `runNMF`
+#' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
+#'     for each program
+#' @param max.genes Max number of genes for each programs     
+#' @return Returns a list of top genes for each gene program
+#'
+#' @examples
+#' # nmf_genes <- getNMFgenes(nmf_results.list)
+#' 
+#' @importFrom NMF extractFeatures
+#' @export  
+
+getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
+  
+  nmf.genes <- lapply(nmf.res, function(model) {
+    
+    emb <- model$h
+    load <- model$w
+    
+    m <- NMF::extractFeatures(load, method=method)
+    m <- lapply(m, function(x){
+      genes <- rownames(load)[x]
+      head(genes, min(length(genes), max.genes))
+    })
+    
+    names(m) <- paste0("p",seq(1,length(m)))
+    m
+  })
+  
+  nmf.genes <- unlist(nmf.genes, recursive = F)
+  return(nmf.genes)
+}
+
+#' Get consensus gene signature for conserved gene programs
+#'
+#' Run it over a list of NMF models obtained using `runNMF`; it will determine
+#' gene programs that are consistently observed across samples and values of k.
+#'
+#' @param nmf.res A list of NMF models obtained from `runNMF`
+#' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
+#'     for each program
+#' @param max.genes Max number of genes for each programs
+#' @param hclust.method Method to build similarity tree between individual programs
+#' @param nprograms Total number of consensus programs
+#' @param min.confidence Percentage of programs in which a gene is seen, to be retained
+#'      in the consensus metaprograms
+#' @param return.coverage Return sample coverage for each meta-program
+#' @param plot.tree Whether to plot the similarity tree between gene programs
+#' @param return.tree Whether to return the similarity tree between gene programs
+#' @return Returns a list of top genes for each gene program
+#'
+#' @examples
+#' # markers <- getNMFgenesConsensus(nmf_results.list)
+#' 
+#' @importFrom NMF extractFeatures
+#' @importFrom stats cutree
+#' @export  
+
+getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
+                                    hclust.method="ward.D2", nprograms=10,
+                                    min.confidence=0.5,
+                                    return.coverage=FALSE,
+                                    plot.tree=TRUE, return.tree=FALSE) {
+  set.seed(123)
+  nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
+  
+  nprogs <- length(nmf.genes)
+  J <- matrix(data=0, ncol=nprogs, nrow = nprogs)
+  colnames(J) <- names(nmf.genes)
+  rownames(J) <- names(nmf.genes)
+  
+  for (i in 1:nprogs) {
+    for (j in 1:nprogs) {
+      J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
+    }  
+  }
+  tree <- hclust(as.dist(1-J), method=hclust.method)
+  
+  cl_members <- cutree(tree, k = nprograms)
+  if (plot.tree) {
+    require(dendextend)
+    dendro <- as.dendrogram(tree)
+    labs.order <- labels(dendro)
+    cluster.order <- unique(cl_members[labs.order])
+    plot(x = tree, labels =  row.names(tree), cex = 0.3)
+    dendextend::rect.dendrogram(tree = dendro, k = nprograms, which = 1:nprograms,
+                                border = 1:nprograms, cluster = cl_members, text=cluster.order)
+  }
+  if (return.tree) {
+    return(tree)
+  }
+  
+  markers.consensus <- lapply(seq(1, nprograms), function(c) {
+    which.samples <- names(cl_members)[cl_members == c]
+    genes <- nmf.genes[which.samples]
+    genes.confidence <- sort(table(unlist(genes)), decreasing = T)/(length(which.samples))
+    genes.unique <- names(genes.confidence)[genes.confidence > min.confidence]
+    head(genes.unique, min(length(genes.unique), max.genes))
+  })
+  names(markers.consensus) <- paste0("Program",seq(1,nprograms))
+  
+  if (!return.coverage) {
+    return(markers.consensus)
+  }
+  
+  all.samples <- unique(gsub("\\.k\\d+\\.p\\d+","",colnames(J)))
+  sample.coverage <- lapply(seq(1, nprograms), function(c) {
+    which.samples <- names(cl_members)[cl_members == c]
+    ss <- gsub("\\.k\\d+\\.p\\d+","",which.samples)
+    ss <- factor(ss, levels=all.samples)
+    ss.tab <- table(ss)
+    
+    #Percent samples represented
+    sum(ss.tab>0)/length(ss.tab)
+  })
+  names(sample.coverage) <- paste0("Program",seq(1,nprograms))
+  return(sample.coverage)
+}  
+
+#' Plot heatmap of similarity between NMF programs
+#'
+#' Run it over a list of NMF models obtained using `runNMF`; it plots the Jaccard Index
+#' similarity between all pairs of programs calculated over different samples and different
+#' values of k.
+#'
+#' @param nmf.res A list of NMF models obtained from `runNMF`
+#' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
+#'     for each program
+#' @param max.genes Max number of genes for each programs
+#' @param hclust.method Method to build similarity tree between individual programs
+#' @param jaccard.cutoff Min and max values for plotting the Jaccard index
+#' @return Returns a heatmap visualization of similarity between gene programs
+#'
+#' @examples
+#' # nmf_genes <- getNMFheatmap(nmf_results.list)
+#' 
+#' @importFrom pheatmap pheatmap
+#' @importFrom viridis viridis
+#' @export  
+
+getNMFheatmap <- function(nmf.res, method=0.5, max.genes=50,
+                            hclust.method="ward.D2",
+                            jaccard.cutoff=c(0,0.8)) {
+  
+  nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
+  
+  nprogs <- length(nmf.genes)
+  J <- matrix(data=0, ncol=nprogs, nrow = nprogs)
+  colnames(J) <- names(nmf.genes)
+  rownames(J) <- names(nmf.genes)
+  
+  for (i in 1:nprogs) {
+    for (j in 1:nprogs) {
+      J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
+    }  
+  }
+  tree <- hclust(as.dist(1-J), method=hclust.method)
+  
+  J.plot <- J
+  J.plot[J<jaccard.cutoff[1]] <- jaccard.cutoff[1]
+  J.plot[J>jaccard.cutoff[2]] <- jaccard.cutoff[2]
+  
+  ph <- pheatmap(J.plot,
+                 clustering_method = "ward.D2",
+                 scale = "none",
+                 color = viridis(100, option="A", direction=-1),
+                 main = "Clustered Heatmap",
+                 cluster_rows = tree,
+                 cluster_cols = tree
+  )
+  return(ph)
+}  
+
+#' Run Gene set enrichment analysis
+#'
+#' Utility function to run GSEA over a list of genes and obtain enriched sets.
+#'
+#' @param genes A vector of genes
+#' @param universe Background universe of gene symbols (passed on to `fgsea::fora`)
+#' @param category GSEA main category (e.g. "H" or "C5")
+#' @param subcategory GSEA subcategory
+#' @param pval.thr Min p-value to include results
+#' @return Returns a table of enriched gene programs from GSEA
+#'
+#' @examples
+#' # gsea_res <- runGSEA(genevector)
+#' 
+#' @export  
+
+runGSEA <- function(genes, universe=NULL,
+                    category="H", subcategory=NULL,
+                    pval.thr=0.05) {
+  
+  
+  if (any(duplicated(genes))) {
+    genes <- genes[!duplicated(genes)]
+  }
+  
+  msig_df <- msigdbr::msigdbr(species = "Homo sapiens", category = category, subcategory=subcategory)
+  msig_list <- msig_df |> dplyr::split(x = .$gene_symbol, f = .$gs_name)
+  
+  fgRes <- fgsea::fora(pathways = msig_list,
+                       genes = genes,
+                       universe = universe)
+  
+  fgRes <- fgRes[fgRes$pval <= pval.thr,]
+  return(fgRes)
+}
+
+
+#' Compute NMF as a low-dim embedding for Seurat
+#'
+#' compute and load NMF embeddings for a single object, and store them in Seurat data
+#' structure. They can be used as an alternative to PCA for downstream analyses.
+#' 
+#' @param obj A seurat object
+#' @param assay Get data matrix from this assay
+#' @param slot Get data matrix from this slot (=layer)
+#' @param k Number of components for low-dim representation
+#' @param new.reduction Name of new dimensionality reduction
+#' @param calculate_hvg Whether to compute highly variable features
+#' @param hvg List of pre-calculated variable genes to subset the matrix.
+#'     If hvg=NULL and calculate_hvg=NULL, uses all genes.
+#' @param nfeatures Number of HVG, if calculate_hvg=TRUE
+#' @param do_centering Whether to center the data matrix
+#' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
+#'     data matrix
+#' @param L1 L1 regularization term for NMF
+#' @param seed Random seed
+#' @return Returns a Seurat object with a new dimensionality reduction (NMF)
+#'
+#' @examples
+#' # seurat <- RunNMF(seurat, k=8)
+#' @importFrom RccpML nmf
+#' @export  
+RunNMF <- function(obj, assay="RNA", slot="data", k=10,
+                   new.reduction="NMF",
+                   hvg=NULL, nfeatures = 2000, L1=c(0,0),
+                   do_centering=TRUE, calculate_hvg=TRUE,
+                   exclude_ribo_mito=FALSE) {
+  
+  
+  set.seed(seed)
+  
+  if (calculate_hvg & is.null(hvg)) {
+    hvg <- FindHVG(obj.list, nfeatures=nfeatures)
+  }
+  
+  mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
+                    hvg=hvg, do_centering=do_centering,
+                    exclude_ribo_mito=exclude_ribo_mito)
+  
+  model <- RcppML::nmf(mat, k = k, L1 = L1)
+  
+  rownames(model$h) <- paste0(new.reduction,"_",1:nrow(model$h))
+  colnames(model$h) <- colnames(mat)
+  
+  rownames(model$w) <- rownames(mat)
+  colnames(model$w) <- paste0(new.reduction,"_",1:ncol(model$w))
+  
+  #New dim reduction
+  obj@reductions[[new.reduction]] <- new("DimReduc",
+                                         cell.embeddings = t(model$h),
+                                         feature.loadings = model$w,
+                                         assay.used = assay,
+                                         stdev = model$d,
+                                         key = paste0(new.reduction,"_"),
+                                         global = FALSE)
+  return(obj)
+}  
+
+
+
+
+#' Extract data matrix from Seurat object
+#'
+#' Get the gene expression matrix from a Seurat object, optionally centered
+#' and/or subset on highly variable genes
+#'
+#' @param obj Seurat object
+#' @param assay Get data matrix from this assay
+#' @param slot Get data matrix from this slot (=layer)
+#' @param hvg List of variable genes to subset the matrix. If NULL, uses
+#'     all genes
+#' @param do_centering Whether to center the data matrix
+#' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
+#'     data matrix
+#'     
+#' @return Returns a data matrix (cells per genes), subset according to
+#' the given parameters
+#'
+#' @examples
+#' # matrix <- getDataMatrix(seurat_object)
+#' 
+#' @importFrom Seurat GetAssayData
+#' @export  
+getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=TRUE,
+                       exclude_ribo_mito=FALSE) {
+  
+  mat <- GetAssayData(obj, assay=assay, layer=slot)
+  
+  #subset on HVG
+  if (!is.null(hvg)) mat <- mat[hvg,]
+      
+  if (exclude_ribo_mito) {
+    mito <- grep("^MT-", rownames(mat), value=T)
+    ribo <- grep("^RP[LS]", rownames(mat), value=T)
+    genes.keep <- setdiff(rownames(mat), c(mito, ribo))
+    mat <- mat[genes.keep,]
+  }
+  if (do_centering) {
+    mat <- centerData(mat)
+  }
+  return(mat)
+}
