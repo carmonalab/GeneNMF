@@ -36,7 +36,7 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
     hvg <- findHVG(obj.list, nfeatures=nfeatures)
   }
   
-  nmf.res <- lapply(seu.list, function(this) {
+  nmf.res <- lapply(obj.list, function(this) {
     
     mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
                       hvg=hvg, do_centering=do_centering,
