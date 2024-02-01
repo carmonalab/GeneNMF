@@ -12,6 +12,8 @@ multiNMF(
   hvg = NULL,
   nfeatures = 2000,
   L1 = c(0, 0),
+  min.exp = 0.01,
+  max.exp = 3,
   calculate_hvg = TRUE,
   do_centering = TRUE,
   exclude_ribo_mito = FALSE,
@@ -33,6 +35,10 @@ If hvg=NULL and calculate_hvg=NULL, uses all genes.}
 \item{nfeatures}{Number of HVG, if calculate_hvg=TRUE}
 
 \item{L1}{L1 regularization term for NMF}
+
+\item{min.exp}{Minimum average log-expression value for retaining genes}
+
+\item{max.exp}{Maximum average log-expression value for retaining genes}
 
 \item{calculate_hvg}{Whether to compute highly variable features}
 

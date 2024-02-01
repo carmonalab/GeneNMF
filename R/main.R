@@ -14,6 +14,8 @@
 #' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
 #'     data matrix
 #' @param L1 L1 regularization term for NMF
+#' @param min.exp Minimum average log-expression value for retaining genes
+#' @param max.exp Maximum average log-expression value for retaining genes
 #' @param k Number of target components for NMF (can be a vector)
 #' @param seed Random seed     
 #'     
@@ -27,13 +29,15 @@
 
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
+                   min.exp=0.01, max.exp=3.0,
                    calculate_hvg=TRUE, do_centering=TRUE,
                    exclude_ribo_mito=FALSE, seed=123) {
   
   set.seed(seed)
   
   if (calculate_hvg & is.null(hvg)) {
-    hvg <- findHVG(obj.list, nfeatures=nfeatures)
+    hvg <- findHVG(obj.list, nfeatures=nfeatures,
+                   min.exp=min.exp, max.exp=max.exp)
   }
   
   nmf.res <- lapply(obj.list, function(this) {

@@ -1,7 +1,7 @@
 Package: GeneNMF
 Type: Package
 Title: Non-negative matrix factorization for single-cell omics
-Version: 0.1
+Version: 0.2
 Authors@R: c(
   person('Massimo', 'Andreatta',
     email = 'massimo.andreatta@unil.ch',
