@@ -16,6 +16,7 @@ multiNMF(
   max.exp = 3,
   calculate_hvg = TRUE,
   do_centering = TRUE,
+  min.cells.per.sample = 10,
   exclude_ribo_mito = FALSE,
   seed = 123
 )
@@ -43,6 +44,8 @@ If hvg=NULL and calculate_hvg=NULL, uses all genes.}
 \item{calculate_hvg}{Whether to compute highly variable features}
 
 \item{do_centering}{Whether to center the data matrix}
+
+\item{min.cells.per.sample}{Minimum numer of cells per sample (smaller samples will be ignored)}
 
 \item{exclude_ribo_mito}{Exclude ribosomal and mitochondrial genes from
 data matrix}
