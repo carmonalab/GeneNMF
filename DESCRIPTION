@@ -15,7 +15,8 @@ Imports: RcppML,
     NMF,
     Matrix,
     stats,
-    Seurat (>= 4.3.0)
+    Seurat (>= 4.3.0),
+    cluster
 Suggests: knitr,
     rmarkdown,
     dendextend,

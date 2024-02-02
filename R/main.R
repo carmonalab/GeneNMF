@@ -149,7 +149,9 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
     }  
   }
   
-  tree <- hclust(as.dist(1-J), method=hclust.method)
+  Jdist <- as.dist(1-J)
+  
+  tree <- hclust(Jdist, method=hclust.method)
   
   cl_members <- cutree(tree, k = nprograms)
   
@@ -160,7 +162,7 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
     genes.unique <- names(genes.confidence)[genes.confidence > min.confidence]
     head(genes.unique, min(length(genes.unique), max.genes))
   })
-  names(markers.consensus) <- paste0("Program",seq(1,nprograms))
+  names(markers.consensus) <- paste0("MetaProgram",seq(1,nprograms))
   
   all.samples <- unique(gsub("\\.k\\d+\\.p\\d+","",colnames(J)))
   sample.coverage <- lapply(seq(1, nprograms), function(c) {
@@ -172,11 +174,31 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
     #Percent samples represented
     sum(ss.tab>0)/length(ss.tab)
   })
-  names(sample.coverage) <- paste0("Program",seq(1,nprograms))
+  
+  #calcuate metaprogram silhouettes
+  sil <- cluster::silhouette(cl_members,dist=Jdist)
+  sil.widths <- summary(sil)$clus.avg.widths
+  
+  #calculate metaprogram internal distance minus total distance
+  clusterInternalMinusTotalDistance <- rep(NA,nprograms)
+  for(i in seq_len(nprograms)){
+    selectMP <- which(cl_members==i)
+    selectJ <- Jdist[selectMP,selectMP]
+    value <- round(mean(selectJ[upper.tri(selectJ)]),3)
+    clusterInternalDistance[i] <- value
+  }
+  totalDistance <- mean(J[upper.tri(J)])
+  clusterInternalMinusTotalDistance <- clusterInternalMinusTotalDistance - totalDistance
+  
+  metaprograms.metrics <- data.frame(
+             sampleCoverage=sample.coverage,
+             silhouette=sil.widths,
+             internaldistance=clusterInternalMinusTotalDistance)
+  rownames(metaprograms.metrics) <- names(markers.consensus)
   
   output.object <- list()
   output.object[["metaprograms.genes"]] <- markers.consensus
-  output.object[["metaprograms.sampleCoverage"]] <- sample.coverage
+  output.object[["metaprograms.metrics"]] <- metaprograms.metrics
   output.object[["programs.jaccard"]] <- J
   output.object[["programs.tree"]] <- tree
   output.object[["programs.clusters"]] <- cl_members
@@ -220,9 +242,10 @@ plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
   cluster.order <- unique(cl_members[labs.order])
   nprograms <- length(cluster.order)
   
-  treePlot <- plot(x = tree, labels =  row.names(tree), cex = 0.3)
-  dendextend::rect.dendrogram(tree = dendro, k = nprograms, which = 1:nprograms,
+  plot(x = tree, labels =  row.names(tree), cex = 0.3)
+  treePlot <- dendextend::rect.dendrogram(tree = dendro, k = nprograms, which = 1:nprograms,
                               border = 1:nprograms, cluster = cl_members, text=cluster.order)
+  
   output.object[["tree"]] <- treePlot
   
     
