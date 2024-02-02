@@ -174,10 +174,12 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
     #Percent samples represented
     sum(ss.tab>0)/length(ss.tab)
   })
+  names(sample.coverage) <- paste0("MetaProgram",seq(1,nprograms))
   
   #calcuate metaprogram silhouettes
   sil <- cluster::silhouette(cl_members,dist=Jdist)
   sil.widths <- summary(sil)$clus.avg.widths
+  names(sil.widths) <- paste0("MetaProgram",seq(1,nprograms))
   
   #calculate metaprogram internal distance minus total distance
   clusterJaccard <- rep(NA,nprograms)
@@ -189,12 +191,13 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
   }
   totalJaccard <- mean(J[upper.tri(J)])
   clusterMinusTotalJaccard <- clusterJaccard - totalJaccard
-  
-  metaprograms.metrics <- data.frame(
+  names(clusterMinusTotalJaccard) <- paste0("MetaProgram",seq(1,nprograms))
+
+  metaprograms.metrics <- list(
              sampleCoverage=sample.coverage,
              silhouette=sil.widths,
              clusterMinusTotalJaccard=clusterMinusTotalJaccard)
-  rownames(metaprograms.metrics) <- names(markers.consensus)
+  #rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))
   
   output.object <- list()
   output.object[["metaprograms.genes"]] <- markers.consensus
