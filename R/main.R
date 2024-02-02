@@ -200,8 +200,12 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
 #' @export  
 
 plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
-                            hclust.method="ward.D2",
-                            jaccard.cutoff=c(0,0.8), ...) {
+                            jaccard.cutoff=c(0,0.8), 
+                            heatmap.clustering_method = "ward.D2",
+                            heatmap.scale = "none",
+                            heatmap.color = viridis(100, option="A", direction=1),
+                            heatmap.main = "Clustered Heatmap",
+                            ...) {
   
   output.object <- list()
   tree <- mp.res[["programs.tree"]]
@@ -226,15 +230,15 @@ plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
   J.plot[J>jaccard.cutoff[2]] <- jaccard.cutoff[2]
   
   ph <- pheatmap(J.plot,
-                 clustering_method = "ward.D2",
-                 scale = "none",
-                 color = viridis(100, option="A", direction=-1),
-                 main = "Clustered Heatmap",
+                 clustering_method = heatmap.clustering_method,
+                 scale = heatmap.scale,
+                 color = heatmap.color,
+                 main = heatmap.main,
                  cluster_rows = tree,
                  cluster_cols = tree,
                  cutree_rows = nprograms,
-                 cutree_column = nprograms,
-                ...
+                 cutree_cols = nprograms,
+                 ...
   )
   output.object[["heatmap"]] <- ph
   
