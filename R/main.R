@@ -203,9 +203,13 @@ plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
                             jaccard.cutoff=c(0,0.8), 
                             heatmap.clustering_method = "ward.D2",
                             heatmap.scale = "none",
-                            heatmap.color = viridis(100, option="A", direction=1),
+                            heatmap.color = NULL,
                             heatmap.main = "Clustered Heatmap",
                             ...) {
+  
+  if (is.null(heatmap.color)) {
+    heatmap.color <- viridis(100, option="A", direction=1)
+  }
   
   output.object <- list()
   tree <- mp.res[["programs.tree"]]
