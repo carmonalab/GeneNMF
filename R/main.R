@@ -180,20 +180,20 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
   sil.widths <- summary(sil)$clus.avg.widths
   
   #calculate metaprogram internal distance minus total distance
-  clusterInternalMinusTotalJaccard <- rep(NA,nprograms)
+  clusterJaccard <- rep(NA,nprograms)
   for(i in seq_len(nprograms)){
     selectMP <- which(cl_members==i)
     selectJ <- J[selectMP,selectMP]
     value <- round(mean(selectJ[upper.tri(selectJ)]),3)
-    clusterInternalJaccard[i] <- value
+    clusterJaccard[i] <- value
   }
   totalJaccard <- mean(J[upper.tri(J)])
-  clusterInternalMinusTotalJaccard <- clusterInternalJaccard - totalJaccard
+  clusterMinusTotalJaccard <- clusterJaccard - totalJaccard
   
   metaprograms.metrics <- data.frame(
              sampleCoverage=sample.coverage,
              silhouette=sil.widths,
-             internalJaccard=clusterInternalMinusTotalJaccard)
+             clusterMinusTotalJaccard=clusterMinusTotalJaccard)
   rownames(metaprograms.metrics) <- names(markers.consensus)
   
   output.object <- list()
