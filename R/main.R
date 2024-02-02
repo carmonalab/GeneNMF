@@ -123,7 +123,8 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #' @param min.confidence Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
 #'      in the consensus metaprograms
 #' @param plot.tree Whether to plot (and return) the Jaccard similarity tree between gene programs
-#' @return Returns a list of i) top genes for each meta-program; ii) sample coverage for each meta-program; iii) matrix of Jaccard similarities between meta-programs; and iv) hierarchical clustering of meta-programs (hclust tree)
+#' @return Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics': meta-programs stats; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
+#' 'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
 #'
 #' @examples
 #' # markers <- getMetaPrograms(nmf_results.list)
