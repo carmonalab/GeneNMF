@@ -193,11 +193,11 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
   clusterMinusTotalJaccard <- clusterJaccard - totalJaccard
   names(clusterMinusTotalJaccard) <- paste0("MetaProgram",seq(1,nprograms))
 
-  metaprograms.metrics <- list(
-             sampleCoverage=sample.coverage,
+  metaprograms.metrics <- data.frame(
+             sampleCoverage=unlist(sample.coverage),
              silhouette=sil.widths,
              clusterMinusTotalJaccard=clusterMinusTotalJaccard)
-  #rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))
+  rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))
   
   output.object <- list()
   output.object[["metaprograms.genes"]] <- markers.consensus
