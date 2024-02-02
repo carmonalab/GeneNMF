@@ -204,7 +204,7 @@ plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
                             jaccard.cutoff=c(0,0.8), ...) {
   
   output.object <- list()
-  tree <- mp.res[["tree"]]
+  tree <- mp.res[["programs.tree"]]
   cl_members <- mp.res[["programs.clusters"]]
 
   suppressPackageStartupMessages(require(dendextend))
