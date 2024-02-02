@@ -8,8 +8,11 @@ plotMetaPrograms(
   mp.res,
   method = 0.5,
   max.genes = 50,
-  hclust.method = "ward.D2",
   jaccard.cutoff = c(0, 0.8),
+  heatmap.clustering_method = "ward.D2",
+  heatmap.scale = "none",
+  heatmap.color = NULL,
+  heatmap.main = "Clustered Heatmap",
   ...
 )
 }
@@ -22,7 +25,7 @@ plotMetaPrograms(
 Returns a list with a clustered heatmap and a dendrogram plots of metaprograms similaritites
 }
 \description{
-Generates clustered heatmap and dendrogram for meta-program similities (Jaccard distance)
+Generates clustered heatmap and dendrogram for meta-program similarities (Jaccard index)
 }
 \examples{
 # nmf_genes <- plotMetaPrograms(mp.res)

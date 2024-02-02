@@ -31,7 +31,7 @@ in the consensus metaprograms}
 \item{plot.tree}{Whether to plot (and return) the Jaccard similarity tree between gene programs}
 }
 \value{
-Returns a list of i) top genes for each meta-program; ii) sample coverage for each meta-program; iii) matrix of Jaccard distances between meta-programs; and iv) hierarchical clustering of meta-programs (hclust tree)
+Returns a list of i) top genes for each meta-program; ii) sample coverage for each meta-program; iii) matrix of Jaccard similarities between meta-programs; and iv) hierarchical clustering of meta-programs (hclust tree)
 }
 \description{
 Run it over a list of NMF models obtained using `multiNMF`; it will determine
