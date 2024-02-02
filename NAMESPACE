@@ -2,10 +2,10 @@
 
 export(RunNMF)
 export(getDataMatrix)
+export(getMetaPrograms)
 export(getNMFgenes)
-export(getNMFgenesConsensus)
-export(getNMFheatmap)
 export(multiNMF)
+export(plotMetaPrograms)
 export(runGSEA)
 importFrom(NMF,extractFeatures)
 importFrom(RcppML,nmf)

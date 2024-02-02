@@ -56,7 +56,7 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
     
     res.k <- lapply(k, function(k.this) {
       
-      model <- RcppML::nmf(mat, k = k.this, L1 = L1)
+      model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE)
       
       rownames(model$h) <- paste0("pattern",1:nrow(model$h))
       colnames(model$h) <- colnames(mat)
@@ -109,7 +109,7 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
   return(nmf.genes)
 }
 
-#' Get consensus gene signature for conserved gene programs
+#' Extract consensus gene programs (meta-programs)
 #'
 #' Run it over a list of NMF models obtained using `multiNMF`; it will determine
 #' gene programs that are consistently observed across samples and values of k.
@@ -120,25 +120,22 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #' @param max.genes Max number of genes for each programs
 #' @param hclust.method Method to build similarity tree between individual programs
 #' @param nprograms Total number of consensus programs
-#' @param min.confidence Percentage of programs in which a gene is seen, to be retained
+#' @param min.confidence Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
 #'      in the consensus metaprograms
-#' @param return.coverage Return sample coverage for each meta-program
-#' @param plot.tree Whether to plot the similarity tree between gene programs
-#' @param return.tree Whether to return the similarity tree between gene programs
-#' @return Returns a list of top genes for each gene program
+#' @param plot.tree Whether to plot (and return) the Jaccard similarity tree between gene programs
+#' @return Returns a list of i) top genes for each meta-program; ii) sample coverage for each meta-program; iii) matrix of Jaccard distances between meta-programs; and iv) hierarchical clustering of meta-programs (hclust tree)
 #'
 #' @examples
-#' # markers <- getNMFgenesConsensus(nmf_results.list)
+#' # markers <- getMetaPrograms(nmf_results.list)
 #' 
 #' @importFrom NMF extractFeatures
 #' @importFrom stats cutree
 #' @export  
 
-getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
+getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
                                     hclust.method="ward.D2", nprograms=10,
-                                    min.confidence=0.5,
-                                    return.coverage=FALSE,
-                                    plot.tree=TRUE, return.tree=FALSE) {
+                                    min.confidence=0.5) {
+  
   nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
   
   nprogs <- length(nmf.genes)
@@ -151,21 +148,11 @@ getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
       J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
     }  
   }
-  tree <- hclust(as.dist(1-J), method=hclust.method)
+  jaccard_dist <- as.dist(1-J)
+  
+  tree <- hclust(jaccard_dist, method=hclust.method)
   
   cl_members <- cutree(tree, k = nprograms)
-  if (plot.tree) {
-    require(dendextend)
-    dendro <- as.dendrogram(tree)
-    labs.order <- labels(dendro)
-    cluster.order <- unique(cl_members[labs.order])
-    plot(x = tree, labels =  row.names(tree), cex = 0.3)
-    dendextend::rect.dendrogram(tree = dendro, k = nprograms, which = 1:nprograms,
-                                border = 1:nprograms, cluster = cl_members, text=cluster.order)
-  }
-  if (return.tree) {
-    return(tree)
-  }
   
   markers.consensus <- lapply(seq(1, nprograms), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
@@ -175,10 +162,6 @@ getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
     head(genes.unique, min(length(genes.unique), max.genes))
   })
   names(markers.consensus) <- paste0("Program",seq(1,nprograms))
-  
-  if (!return.coverage) {
-    return(markers.consensus)
-  }
   
   all.samples <- unique(gsub("\\.k\\d+\\.p\\d+","",colnames(J)))
   sample.coverage <- lapply(seq(1, nprograms), function(c) {
@@ -191,48 +174,53 @@ getNMFgenesConsensus <- function(nmf.res, method=0.5, max.genes=50,
     sum(ss.tab>0)/length(ss.tab)
   })
   names(sample.coverage) <- paste0("Program",seq(1,nprograms))
-  return(sample.coverage)
+  
+  output.object <- list()
+  output.object[["metaprograms.genes"]] <- markers.consensus
+  output.object[["metaprograms.sampleCoverage"]] <- sample.coverage
+  output.object[["programs.distances"]] <- jaccard_dist
+  output.object[["programs.tree"]] <- tree
+  output.object[["programs.clusters"]] <- cl_members
+  return(output.object)
 }  
 
-#' Plot heatmap of similarity between NMF programs
+#' Visualizations for meta-programs
 #'
-#' Run it over a list of NMF models obtained using `multiNMF`; it plots the Jaccard Index
-#' similarity between all pairs of programs calculated over different samples and different
-#' values of k.
+#' Generates clustered heatmap and dendrogram for meta-program similities (Jaccard distance)
 #'
-#' @param nmf.res A list of NMF models obtained from `multiNMF`
-#' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
-#'     for each program
-#' @param max.genes Max number of genes for each programs
-#' @param hclust.method Method to build similarity tree between individual programs
+#' @param mp.res The meta-programs object generated by `getMetaPrograms`
 #' @param jaccard.cutoff Min and max values for plotting the Jaccard index
-#' @return Returns a heatmap visualization of similarity between gene programs
+#' @return Returns a list with a clustered heatmap and a dendrogram plots of metaprograms similaritites
 #'
 #' @examples
-#' # nmf_genes <- getNMFheatmap(nmf_results.list)
+#' # nmf_genes <- plotMetaPrograms(mp.res)
 #' 
 #' @importFrom pheatmap pheatmap
 #' @importFrom viridis viridis
 #' @export  
 
-getNMFheatmap <- function(nmf.res, method=0.5, max.genes=50,
+plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
                             hclust.method="ward.D2",
-                            jaccard.cutoff=c(0,0.8)) {
+                            jaccard.cutoff=c(0,0.8), ...) {
   
-  nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
+  output.object <- list()
+  tree <- mp.res[["tree"]]
+  cl_members <- mp.res[["programs.clusters"]]
+
+  suppressPackageStartupMessages(require(dendextend))
+  dendro <- as.dendrogram(tree)
+  labs.order <- labels(dendro)
+  cluster.order <- unique(cl_members[labs.order])
+  nprograms <- length(cluster.order)
   
-  nprogs <- length(nmf.genes)
-  J <- matrix(data=0, ncol=nprogs, nrow = nprogs)
-  colnames(J) <- names(nmf.genes)
-  rownames(J) <- names(nmf.genes)
+  treePlot <- plot(x = tree, labels =  row.names(tree), cex = 0.3)
+  dendextend::rect.dendrogram(tree = dendro, k = nprograms, which = 1:nprograms,
+                              border = 1:nprograms, cluster = cl_members, text=cluster.order)
+  output.object[["tree"]] <- treePlot
   
-  for (i in 1:nprogs) {
-    for (j in 1:nprogs) {
-      J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
-    }  
-  }
-  tree <- hclust(as.dist(1-J), method=hclust.method)
-  
+    
+  J <- mp.res[["programs.distances"]]
+    
   J.plot <- J
   J.plot[J<jaccard.cutoff[1]] <- jaccard.cutoff[1]
   J.plot[J>jaccard.cutoff[2]] <- jaccard.cutoff[2]
@@ -243,10 +231,16 @@ getNMFheatmap <- function(nmf.res, method=0.5, max.genes=50,
                  color = viridis(100, option="A", direction=-1),
                  main = "Clustered Heatmap",
                  cluster_rows = tree,
-                 cluster_cols = tree
+                 cluster_cols = tree,
+                 cutree_rows = nprograms,
+                 cutree_column = nprograms,
+                ...
   )
-  return(ph)
-}  
+  output.object[["heatmap"]] <- ph
+  
+  return(output.object)
+
+  }  
 
 #' Run Gene set enrichment analysis
 #'
@@ -329,7 +323,7 @@ RunNMF <- function(obj, assay="RNA", slot="data", k=10,
                     hvg=hvg, do_centering=do_centering,
                     exclude_ribo_mito=exclude_ribo_mito)
   
-  model <- RcppML::nmf(mat, k = k, L1 = L1)
+  model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE)
   
   rownames(model$h) <- paste0(new.reduction,"_",1:nrow(model$h))
   colnames(model$h) <- colnames(mat)
