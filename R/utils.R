@@ -28,7 +28,7 @@ findHVG <- function(obj.list, nfeatures=2000,
   obj.list <- lapply(obj.list, function(x){
     
     ncalc <- min(5*nfeatures, nrow(x))
-    x <- Seurat::FindVariableFeatures(x, nfeat=ncalc)
+    x <- Seurat::FindVariableFeatures(x, nfeat=ncalc, verbose=FALSE)
     varfeat <- VariableFeatures(x)
     #Also exclude genes that are very poorly or always expressed
     means <- apply(GetAssayData(x, slot="data")[varfeat, ], 1, mean)
@@ -39,6 +39,7 @@ findHVG <- function(obj.list, nfeatures=2000,
     VariableFeatures(x) <- varfeat[1:n]
     x
   })
-  hvg <- Seurat::SelectIntegrationFeatures(obj.list, nfeatures = nfeatures)
+  hvg <- Seurat::SelectIntegrationFeatures(obj.list,nfeatures = nfeatures,
+                                           verbose = FALSE)
   return(hvg)
 }

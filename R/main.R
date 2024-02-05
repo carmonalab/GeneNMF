@@ -78,7 +78,9 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #'
 #' @param nmf.res A list of NMF models obtained from `multiNMF`
 #' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
-#'     for each program
+#'     for each program. When 'method' is a number between 0 and 1, it indicates
+#'     the minimum relative basis contribution above which the feature is
+#'     selected, i.e. how specific is a gene for a given program.
 #' @param max.genes Max number of genes for each programs     
 #' @return Returns a list of top genes for each gene program
 #'

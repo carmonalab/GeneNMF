@@ -10,7 +10,9 @@ getNMFgenes(nmf.res, method = 0.5, max.genes = 50)
 \item{nmf.res}{A list of NMF models obtained from `multiNMF`}
 
 \item{method}{Parameter passed to `NMF::extractFeatures` to obtain top genes
-for each program}
+for each program. When 'method' is a number between 0 and 1, it indicates
+the minimum relative basis contribution above which the feature is
+selected, i.e. how specific is a gene for a given program.}
 
 \item{max.genes}{Max number of genes for each programs}
 }
