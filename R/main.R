@@ -123,7 +123,7 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #' @param min.confidence Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
 #'      in the consensus metaprograms
 #' @param plot.tree Whether to plot (and return) the Jaccard similarity tree between gene programs
-#' @return Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics': meta-programs stats; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
+#' @return Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs stats: a) freq. of samples where the MP is present, b) average silhouette width, c) mean Jaccard similarity, and d) number of genes in MP; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
 #' 'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
 #'
 #' @examples
@@ -182,7 +182,7 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
   sil.widths <- summary(sil)$clus.avg.widths
   names(sil.widths) <- paste0("MetaProgram",seq(1,nprograms))
   
-  #calculate metaprogram internal distance minus total distance
+  #calculate metaprogram internal average Jaccard similarity
   clusterJaccard <- rep(NA,nprograms)
   for(i in seq_len(nprograms)){
     selectMP <- which(cl_members==i)
@@ -190,16 +190,13 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
     value <- round(mean(selectJ[upper.tri(selectJ)]),3)
     clusterJaccard[i] <- value
   }
-  totalJaccard <- mean(J[upper.tri(J)])
-  clusterMinusTotalJaccard <- clusterJaccard - totalJaccard
-  names(clusterMinusTotalJaccard) <- paste0("MetaProgram",seq(1,nprograms))
-
+  
   metaprograms.length <- unlist(lapply(markers.consensus,length))
   
   metaprograms.metrics <- data.frame(
              sampleCoverage=unlist(sample.coverage),
              silhouette=sil.widths,
-             clusterMinusTotalJaccard=clusterMinusTotalJaccard,
+             meanJaccard=clusterJaccard,
              numberGenes=metaprograms.length)
   
   rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))

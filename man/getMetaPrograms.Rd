@@ -31,7 +31,7 @@ in the consensus metaprograms}
 \item{plot.tree}{Whether to plot (and return) the Jaccard similarity tree between gene programs}
 }
 \value{
-Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics': meta-programs stats; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
+Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs stats: a) freq. of samples where the MP is present, b) average silhouette width, c) mean Jaccard similarity, and d) number of genes in MP; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
 'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
 }
 \description{
