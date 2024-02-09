@@ -14,10 +14,9 @@ multiNMF(
   L1 = c(0, 0),
   min.exp = 0.01,
   max.exp = 3,
-  calculate_hvg = TRUE,
   do_centering = TRUE,
   min.cells.per.sample = 10,
-  exclude_ribo_mito = FALSE,
+  hvg.blocklist = NULL,
   seed = 123
 )
 }
@@ -31,7 +30,7 @@ multiNMF(
 \item{k}{Number of target components for NMF (can be a vector)}
 
 \item{hvg}{List of pre-calculated variable genes to subset the matrix.
-If hvg=NULL and calculate_hvg=NULL, uses all genes.}
+If hvg=NULL it calculates them using}
 
 \item{nfeatures}{Number of HVG, if calculate_hvg=TRUE}
 
@@ -41,16 +40,16 @@ If hvg=NULL and calculate_hvg=NULL, uses all genes.}
 
 \item{max.exp}{Maximum average log-expression value for retaining genes}
 
-\item{calculate_hvg}{Whether to compute highly variable features}
-
 \item{do_centering}{Whether to center the data matrix}
 
 \item{min.cells.per.sample}{Minimum numer of cells per sample (smaller samples will be ignored)}
 
-\item{exclude_ribo_mito}{Exclude ribosomal and mitochondrial genes from
-data matrix}
+\item{hvg.blocklist}{Optionally takes a vector or list of vectors of gene names. These genes will be ignored for HVG detection. This is useful to mitigate effect of genes associated with technical artifacts and batch effects (e.g. mitochondrial), and to exclude TCR and BCR adaptive immune (clone-specific) receptors.
+If set to `NULL` no genes will be excluded}
 
 \item{seed}{Random seed}
+
+\item{calculate_hvg}{Whether to compute highly variable features}
 }
 \value{
 Returns a list of NMF results

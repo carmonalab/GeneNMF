@@ -9,11 +9,11 @@
 #' @param slot Get data matrix from this slot (=layer)
 #' @param calculate_hvg Whether to compute highly variable features
 #' @param hvg List of pre-calculated variable genes to subset the matrix.
-#'     If hvg=NULL and calculate_hvg=NULL, uses all genes.
+#'     If hvg=NULL it calculates them using 
 #' @param nfeatures Number of HVG, if calculate_hvg=TRUE
 #' @param do_centering Whether to center the data matrix
-#' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
-#'     data matrix
+#' @param hvg.blocklist Optionally takes a vector or list of vectors of gene names. These genes will be ignored for HVG detection. This is useful to mitigate effect of genes associated with technical artifacts and batch effects (e.g. mitochondrial), and to exclude TCR and BCR adaptive immune (clone-specific) receptors.
+#'  If set to `NULL` no genes will be excluded
 #' @param L1 L1 regularization term for NMF
 #' @param min.cells.per.sample Minimum numer of cells per sample (smaller samples will be ignored)
 #' @param min.exp Minimum average log-expression value for retaining genes
@@ -31,10 +31,9 @@
 
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
-                   min.exp=0.01, max.exp=3.0,
-                   calculate_hvg=TRUE, do_centering=TRUE,
+                   min.exp=0.01, max.exp=3.0, do_centering=TRUE,
                    min.cells.per.sample = 10,
-                   exclude_ribo_mito=FALSE, seed=123) {
+                   hvg.blocklist=NULL, seed=123) {
   
   set.seed(seed)
   
@@ -42,17 +41,16 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   nc <- lapply(obj.list, ncol)
   obj.list <- obj.list[nc > min.cells.per.sample]
   
-  if (calculate_hvg & is.null(hvg)) {
+  if (is.null(hvg)) {
     hvg <- findHVG(obj.list, nfeatures=nfeatures,
-                   min.exp=min.exp, max.exp=max.exp)
+                   min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
   }
   
   #run NMF by sample and k
   nmf.res <- lapply(obj.list, function(this) {
     
     mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
-                      hvg=hvg, do_centering=do_centering,
-                      exclude_ribo_mito=exclude_ribo_mito)
+                      hvg=hvg, do_centering=do_centering)
     
     res.k <- lapply(k, function(k.this) {
       
@@ -401,20 +399,13 @@ RunNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' 
 #' @importFrom Seurat GetAssayData
 #' @export  
-getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=TRUE,
-                       exclude_ribo_mito=FALSE) {
+getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=TRUE) {
   
   mat <- GetAssayData(obj, assay=assay, layer=slot)
   
   #subset on HVG
   if (!is.null(hvg)) mat <- mat[hvg,]
-      
-  if (exclude_ribo_mito) {
-    mito <- grep("^MT-", rownames(mat), value=T)
-    ribo <- grep("^RP[LS]", rownames(mat), value=T)
-    genes.keep <- setdiff(rownames(mat), c(mito, ribo))
-    mat <- mat[genes.keep,]
-  }
+  
   if (do_centering) {
     mat <- centerData(mat)
   }

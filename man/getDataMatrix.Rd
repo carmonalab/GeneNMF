@@ -9,8 +9,7 @@ getDataMatrix(
   assay = "RNA",
   slot = "data",
   hvg = NULL,
-  do_centering = TRUE,
-  exclude_ribo_mito = FALSE
+  do_centering = TRUE
 )
 }
 \arguments{
