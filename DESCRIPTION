@@ -16,7 +16,8 @@ Imports: RcppML,
     Matrix,
     stats,
     Seurat (>= 4.3.0),
-    cluster
+    cluster,
+    pheatmap
 Suggests: knitr,
     rmarkdown,
     dendextend,
