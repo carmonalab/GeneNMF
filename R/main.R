@@ -54,7 +54,7 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
     
     res.k <- lapply(k, function(k.this) {
       
-      model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE)
+      model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE, seed=seed)
       
       rownames(model$h) <- paste0("pattern",1:nrow(model$h))
       colnames(model$h) <- colnames(mat)
