@@ -23,9 +23,6 @@ getDataMatrix(
 all genes}
 
 \item{do_centering}{Whether to center the data matrix}
-
-\item{exclude_ribo_mito}{Exclude ribosomal and mitochondrial genes from
-data matrix}
 }
 \value{
 Returns a data matrix (cells per genes), subset according to

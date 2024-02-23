@@ -13,8 +13,7 @@ RunNMF(
   seed = 123,
   L1 = c(0, 0),
   hvg = NULL,
-  do_centering = TRUE,
-  exclude_ribo_mito = FALSE
+  do_centering = TRUE
 )
 }
 \arguments{
@@ -35,9 +34,6 @@ RunNMF(
 \item{hvg}{Which genes to use for the reduction}
 
 \item{do_centering}{Whether to center the data matrix}
-
-\item{exclude_ribo_mito}{Exclude ribosomal and mitochondrial genes from
-data matrix}
 }
 \value{
 Returns a Seurat object with a new dimensionality reduction (NMF)

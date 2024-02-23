@@ -328,8 +328,6 @@ runGSEA <- function(genes, universe=NULL,
 #' @param hvg Which genes to use for the reduction
 #' @param new.reduction Name of new dimensionality reduction
 #' @param do_centering Whether to center the data matrix
-#' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
-#'     data matrix
 #' @param L1 L1 regularization term for NMF
 #' @param seed Random seed
 #' @return Returns a Seurat object with a new dimensionality reduction (NMF)
@@ -341,8 +339,7 @@ runGSEA <- function(genes, universe=NULL,
 RunNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
                    L1=c(0,0), hvg=NULL,
-                   do_centering=TRUE,
-                   exclude_ribo_mito=FALSE) {
+                   do_centering=TRUE) {
   
   
   set.seed(seed)
@@ -355,10 +352,9 @@ RunNMF <- function(obj, assay="RNA", slot="data", k=10,
   }
   
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
-                    hvg=hvg, do_centering=do_centering,
-                    exclude_ribo_mito=exclude_ribo_mito)
+                    hvg=hvg, do_centering=do_centering)
   
-  model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE)
+  model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed)
   
   rownames(model$h) <- paste0(new.reduction,"_",1:nrow(model$h))
   colnames(model$h) <- colnames(mat)
@@ -388,8 +384,6 @@ RunNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' @param hvg List of variable genes to subset the matrix. If NULL, uses
 #'     all genes
 #' @param do_centering Whether to center the data matrix
-#' @param exclude_ribo_mito Exclude ribosomal and mitochondrial genes from
-#'     data matrix
 #'     
 #' @return Returns a data matrix (cells per genes), subset according to
 #' the given parameters
