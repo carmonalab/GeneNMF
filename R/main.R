@@ -241,7 +241,7 @@ plotMetaPrograms <- function(mp.res,
   cl_members <- mp.res[["programs.clusters"]]
 
   #Recover order of MP clusters
-  labs.order <- labels(dendro)
+  labs.order <- labels(tree)
   cluster.order <- unique(cl_members[labs.order])
   nprograms <- length(cluster.order)
   
