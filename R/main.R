@@ -138,7 +138,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
                             max.genes=50,
                             hclust.method="ward.D2",
                             nprograms=10,
-                            min.confidence=0.5,
+                            min.confidence=0.3,
                             remove.empty=TRUE) {
   
   nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
@@ -150,7 +150,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   
   for (i in 1:nprogs) {
     for (j in 1:nprogs) {
-      J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
+      J[i,j] <- GeneNMF:::jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
     }  
   }
   Jdist <- as.dist(1-J)
@@ -160,13 +160,13 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- GeneNMF:::get_metaprogram_consensus(nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  max.genes=max.genes,
                                                  cl_members=cl_members)
   #Get meta-program metrics
-  metaprograms.metrics <- get_metaprogram_metrics(J=J, Jdist=Jdist,
+  metaprograms.metrics <- GeneNMF:::get_metaprogram_metrics(J=J, Jdist=Jdist,
                                                   markers.consensus=markers.consensus,
                                                   cl_members=cl_members)
   
@@ -184,19 +184,26 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   ord <- order(metaprograms.metrics$sampleCoverage,
         metaprograms.metrics$silhouette,
         decreasing = T)
-  ordered.names <- paste0("MP",seq_along(ord))
+  old.names <- names(markers.consensus)[ord]
+  new.names <- paste0("MP",seq_along(ord))
   
   markers.consensus <- markers.consensus[ord]
-  names(markers.consensus) <- ordered.names
+  names(markers.consensus) <- new.names
   metaprograms.metrics <- metaprograms.metrics[ord,]
-  rownames(metaprograms.metrics) <- ordered.names
+  rownames(metaprograms.metrics) <- new.names
+  
+  map.index <- seq_along(old.names)
+  names(map.index) <- as.numeric(gsub("MetaProgram","",old.names))
+  cl_members.new <- map.index[as.character(cl_members)]
+  cl_members.new[is.na(cl_members.new)] <- length(map.index)+1
+  names(cl_members.new) <- names(cl_members)
   
   output.object <- list()
   output.object[["metaprograms.genes"]] <- markers.consensus
   output.object[["metaprograms.metrics"]] <- metaprograms.metrics
   output.object[["programs.jaccard"]] <- J
   output.object[["programs.tree"]] <- tree
-  output.object[["programs.clusters"]] <- cl_members
+  output.object[["programs.clusters"]] <- cl_members.new
   return(output.object)
 }  
 

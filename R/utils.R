@@ -72,7 +72,7 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   names(sample.coverage) <- paste0("MetaProgram",seq(1,nprograms))
   
   #calculate MP silhouettes
-  sil <- cluster::silhouette(cl_members,dist=Jdist)
+  sil <- cluster::silhouette(cl_members, dist=Jdist)
   sil.widths <- summary(sil)$clus.avg.widths
   names(sil.widths) <- paste0("MetaProgram",seq(1,nprograms))
   
