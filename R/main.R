@@ -333,10 +333,10 @@ runGSEA <- function(genes, universe=NULL,
 #' @return Returns a Seurat object with a new dimensionality reduction (NMF)
 #'
 #' @examples
-#' # seurat <- RunNMF(seurat, k=8)
+#' # seurat <- runNMF(seurat, k=8)
 #' @importFrom RcppML nmf
 #' @export  
-RunNMF <- function(obj, assay="RNA", slot="data", k=10,
+runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
                    L1=c(0,0), hvg=NULL,
                    do_centering=TRUE) {
@@ -405,3 +405,55 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=
   }
   return(mat)
 }
+
+#' Find variable features
+#'
+#' Select highly variable genes (HVG) from an expression matrix. Genes from a blocklist
+#' (e.g. cell cycling genes, mitochondrial genes) can be excluded from the list of
+#' variable genes, as well as genes with very low or very high average expression
+#'
+#' @param obj A Seurat object containing an expression matrix
+#' @param nfeatures Number of top HVG to be returned
+#' @param genesBlocklist Optionally takes a vector or list of vectors of gene names.
+#'     These genes will be ignored for HVG detection. This is useful to mitigate effect
+#'     of genes associated with technical artifacts or batch effects
+#'     (e.g. mitochondrial, heat-shock response). If set to `NULL` no genes will be excluded
+#' @param min.exp Minimum average normalized expression for HVG. If lower, the gene will be excluded
+#' @param max.exp Maximum average normalized expression for HVG. If higher, the gene will be excluded
+#' @return Returns a list of highly variable genes
+#' @import Seurat
+#' 
+findVariableFeatures_wfilters <- function(
+    obj,
+    nfeatures=2000,
+    genesBlockList="default",
+    min.exp=0.01,
+    max.exp=3)
+{
+  
+  assay <- DefaultAssay(obj)
+  #Calculate a fixed number of HVG, then filtered to nfeat at the end
+  obj <- Seurat::FindVariableFeatures(obj, nfeatures = 10000, verbose=F)
+  
+  varfeat <- VariableFeatures(obj)
+  
+  if (is.vector(genesBlockList)) {
+    genes.block <- genesBlockList # user-provided vector
+  } else {
+    genes.block <- NULL # No excluded genes
+  }
+  
+  varfeat <- setdiff(varfeat, genes.block)
+  
+  #Also remove genes that are very poorly or always expressed (=not really variable genes)
+  means <- apply(GetAssayData(obj, assay=assay, slot="data")[varfeat,], 1, mean)
+  removeGenes2 <- names(means[means<min.exp | means>max.exp])
+  
+  varfeat <- setdiff(varfeat, removeGenes2)
+  n <- min(length(varfeat), nfeatures)
+  
+  VariableFeatures(obj) <- varfeat[1:n]
+  
+  return(obj)
+}  
+
