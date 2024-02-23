@@ -10,7 +10,7 @@ getMetaPrograms(
   max.genes = 50,
   hclust.method = "ward.D2",
   nprograms = 10,
-  min.confidence = 0.5,
+  min.confidence = 0.3,
   remove.empty = TRUE
 )
 }

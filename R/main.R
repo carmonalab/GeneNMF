@@ -225,6 +225,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' 
 #' @importFrom pheatmap pheatmap
 #' @importFrom viridis viridis
+#' @importFrom tidytree as.phylo as.treedata
 #' @export  
 
 plotMetaPrograms <- function(mp.res,
@@ -239,16 +240,30 @@ plotMetaPrograms <- function(mp.res,
   tree <- mp.res[["programs.tree"]]
   cl_members <- mp.res[["programs.clusters"]]
 
-  suppressPackageStartupMessages(require(dendextend))
-  dendro <- as.dendrogram(tree)
+  #Recover order of MP clusters
   labs.order <- labels(dendro)
   cluster.order <- unique(cl_members[labs.order])
   nprograms <- length(cluster.order)
   
-  plot(x = tree, labels =  row.names(tree), cex = 0.3)
-  treePlot <- dendextend::rect.dendrogram(tree = dendro, k = nprograms, which = 1:nprograms,
-                              border = 1:nprograms, cluster = cl_members, text=cluster.order)
+  #Add MP cluster data to tree object
+  phy <- as.phylo(tree)
+  meta <- as.data.frame(cl_members)
+  meta$label <- rownames(meta)
+  meta$cl_members <- factor(as.character(meta$cl_members),
+                            levels=as.character(cluster.order))
+  x <- full_join(as_tibble(phy), meta, by = c("label" = "label"))
+  phy <- as.treedata(x)
   
+  palette <- viridis_pal(option = "turbo", direction = 1)(nprograms)
+  palette <- palette[cluster.order]
+  names(palette) <- as.character(cluster.order)
+  
+  treePlot <- ggtree(phy, layout="dendrogram") +
+    geom_tiplab(aes(color=cl_members)) +
+    scale_color_manual(values=palette) +
+    labs(color = "MP") +
+    ggtitle("Gene programs clustered by Jaccard index")
+    
   output.object[["tree"]] <- treePlot
   
   J <- mp.res[["programs.jaccard"]]
