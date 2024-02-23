@@ -119,10 +119,10 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #'     for each program
 #' @param max.genes Max number of genes for each programs
 #' @param hclust.method Method to build similarity tree between individual programs
-#' @param nprograms Total number of consensus programs
+#' @param nprograms Total number of meta-programs
 #' @param min.confidence Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
 #'      in the consensus metaprograms
-#' @param plot.tree Whether to plot (and return) the Jaccard similarity tree between gene programs
+#' @param remove.empty Whether to remove meta-programs with no genes above confidence threshold      
 #' @return Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs stats: a) freq. of samples where the MP is present, b) average silhouette width, c) mean Jaccard similarity, and d) number of genes in MP; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
 #' 'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
 #'
@@ -130,12 +130,16 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #' # markers <- getMetaPrograms(nmf_results.list)
 #' 
 #' @importFrom NMF extractFeatures
-#' @importFrom stats cutree
+#' @importFrom stats cutree dist
+#' @importFrom cluster silhouette
 #' @export  
 
-getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
-                                    hclust.method="ward.D2", nprograms=10,
-                                    min.confidence=0.5) {
+getMetaPrograms <- function(nmf.res, method=0.5,
+                            max.genes=50,
+                            hclust.method="ward.D2",
+                            nprograms=10,
+                            min.confidence=0.5,
+                            remove.empty=TRUE) {
   
   nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
   
@@ -149,57 +153,43 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
       J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
     }  
   }
-  
   Jdist <- as.dist(1-J)
   
+  #Cluster programs by gene overlap (J index)
   tree <- hclust(Jdist, method=hclust.method)
-  
   cl_members <- cutree(tree, k = nprograms)
   
-  markers.consensus <- lapply(seq(1, nprograms), function(c) {
-    which.samples <- names(cl_members)[cl_members == c]
-    genes <- nmf.genes[which.samples]
-    genes.confidence <- sort(table(unlist(genes)), decreasing = T)/(length(which.samples))
-    genes.unique <- names(genes.confidence)[genes.confidence > min.confidence]
-    head(genes.unique, min(length(genes.unique), max.genes))
-  })
-  names(markers.consensus) <- paste0("MetaProgram",seq(1,nprograms))
+  #Get consensus markers for MPs
+  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
+                                                 nprograms=nprograms,
+                                                 min.confidence=min.confidence,
+                                                 max.genes=max.genes,
+                                                 cl_members=cl_members)
+  #Get meta-program metrics
+  metaprograms.metrics <- get_metaprogram_metrics(J=J, Jdist=Jdist,
+                                                  markers.consensus=markers.consensus,
+                                                  cl_members=cl_members)
   
-  all.samples <- unique(gsub("\\.k\\d+\\.p\\d+","",colnames(J)))
-  sample.coverage <- lapply(seq(1, nprograms), function(c) {
-    which.samples <- names(cl_members)[cl_members == c]
-    ss <- gsub("\\.k\\d+\\.p\\d+","",which.samples)
-    ss <- factor(ss, levels=all.samples)
-    ss.tab <- table(ss)
-    
-    #Percent samples represented
-    sum(ss.tab>0)/length(ss.tab)
-  })
-  names(sample.coverage) <- paste0("MetaProgram",seq(1,nprograms))
-  
-  #calcuate metaprogram silhouettes
-  sil <- cluster::silhouette(cl_members,dist=Jdist)
-  sil.widths <- summary(sil)$clus.avg.widths
-  names(sil.widths) <- paste0("MetaProgram",seq(1,nprograms))
-  
-  #calculate metaprogram internal average Jaccard similarity
-  clusterJaccard <- rep(NA,nprograms)
-  for(i in seq_len(nprograms)){
-    selectMP <- which(cl_members==i)
-    selectJ <- J[selectMP,selectMP]
-    value <- round(mean(selectJ[upper.tri(selectJ)]),3)
-    clusterJaccard[i] <- value
+  #Remove any empty meta-program
+  if (remove.empty) {
+    keep <- metaprograms.metrics$numberGenes > 0
+    metaprograms.metrics <- metaprograms.metrics[keep,]
+    markers.consensus <- markers.consensus[keep]
+    if (sum(!keep)>0) {
+      message(sprintf("Dropped %i empty meta-programs", sum(!keep)))
+    }
   }
   
-  metaprograms.length <- unlist(lapply(markers.consensus,length))
+  #Rename meta-programs after sorting them by metrics
+  ord <- order(metaprograms.metrics$sampleCoverage,
+        metaprograms.metrics$silhouette,
+        decreasing = T)
+  ordered.names <- paste0("MP",seq_along(ord))
   
-  metaprograms.metrics <- data.frame(
-             sampleCoverage=unlist(sample.coverage),
-             silhouette=sil.widths,
-             meanJaccard=clusterJaccard,
-             numberGenes=metaprograms.length)
-  
-  rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))
+  markers.consensus <- markers.consensus[ord]
+  names(markers.consensus) <- ordered.names
+  metaprograms.metrics <- metaprograms.metrics[ord,]
+  rownames(metaprograms.metrics) <- ordered.names
   
   output.object <- list()
   output.object[["metaprograms.genes"]] <- markers.consensus
@@ -216,7 +206,12 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
 #'
 #' @param mp.res The meta-programs object generated by `getMetaPrograms`
 #' @param jaccard.cutoff Min and max values for plotting the Jaccard index
-#' @return Returns a list with a clustered heatmap and a dendrogram plots of metaprograms similaritites
+#' @param heatmap.clustering_method Which hclust method to use for clustering gene programs
+#' @param heatmap.scale Heatmap rescaling (passed to pheatmap as 'scale')
+#' @param heatmap.palette Heatmap color palette (passed to pheatmap as 'color')
+#' @param heatmap.main Heatmap title (passed to pheatmap as 'main')
+#' @param ... Additional parameters for pheatmap
+#' @return Returns a list with a clustered heatmap and a dendrogram plots of MP similaritites
 #'
 #' @examples
 #' # nmf_genes <- plotMetaPrograms(mp.res)
@@ -225,17 +220,13 @@ getMetaPrograms <- function(nmf.res, method=0.5, max.genes=50,
 #' @importFrom viridis viridis
 #' @export  
 
-plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
+plotMetaPrograms <- function(mp.res,
                             jaccard.cutoff=c(0,0.8), 
                             heatmap.clustering_method = "ward.D2",
                             heatmap.scale = "none",
-                            heatmap.color = NULL,
+                            heatmap.palette = viridis(100, option="A", direction=-1),
                             heatmap.main = "Clustered Heatmap",
                             ...) {
-  
-  if (is.null(heatmap.color)) {
-    heatmap.color <- viridis(100, option="A", direction=-1)
-  }
   
   output.object <- list()
   tree <- mp.res[["programs.tree"]]
@@ -253,17 +244,15 @@ plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
   
   output.object[["tree"]] <- treePlot
   
-    
   J <- mp.res[["programs.jaccard"]]
     
-  J.plot <- J
-  J.plot[J<jaccard.cutoff[1]] <- jaccard.cutoff[1]
-  J.plot[J>jaccard.cutoff[2]] <- jaccard.cutoff[2]
+  J[J<jaccard.cutoff[1]] <- jaccard.cutoff[1]
+  J[J>jaccard.cutoff[2]] <- jaccard.cutoff[2]
   
-  ph <- pheatmap(J.plot,
+  ph <- pheatmap(J,
                  clustering_method = heatmap.clustering_method,
                  scale = heatmap.scale,
-                 color = heatmap.color,
+                 color = heatmap.palette,
                  main = heatmap.main,
                  cluster_rows = tree,
                  cluster_cols = tree,
@@ -272,10 +261,8 @@ plotMetaPrograms <- function(mp.res, method=0.5, max.genes=50,
                  ...
   )
   output.object[["heatmap"]] <- ph
-  
   return(output.object)
-
-  }  
+}  
 
 #' Run Gene set enrichment analysis
 #'

@@ -10,7 +10,8 @@ getMetaPrograms(
   max.genes = 50,
   hclust.method = "ward.D2",
   nprograms = 10,
-  min.confidence = 0.5
+  min.confidence = 0.5,
+  remove.empty = TRUE
 )
 }
 \arguments{
@@ -23,12 +24,12 @@ for each program}
 
 \item{hclust.method}{Method to build similarity tree between individual programs}
 
-\item{nprograms}{Total number of consensus programs}
+\item{nprograms}{Total number of meta-programs}
 
 \item{min.confidence}{Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
 in the consensus metaprograms}
 
-\item{plot.tree}{Whether to plot (and return) the Jaccard similarity tree between gene programs}
+\item{remove.empty}{Whether to remove meta-programs with no genes above confidence threshold}
 }
 \value{
 Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs stats: a) freq. of samples where the MP is present, b) average silhouette width, c) mean Jaccard similarity, and d) number of genes in MP; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
