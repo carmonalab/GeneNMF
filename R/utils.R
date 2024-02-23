@@ -23,7 +23,7 @@ getEntropy <- function(tab, pseudo=0.1) {
 }
 
 
-#' FindVariableFeatures.STACAS
+#' Find variable features
 #'
 #' Select highly variable genes (HVG) from an expression matrix. Genes from a blocklist
 #' (e.g. cell cycling genes, mitochondrial genes) can be excluded from the list of
@@ -31,14 +31,16 @@ getEntropy <- function(tab, pseudo=0.1) {
 #'
 #' @param obj A Seurat object containing an expression matrix
 #' @param nfeatures Number of top HVG to be returned
-#' @param genesBlocklist Optionally takes a vector or list of vectors of gene names. These genes will be ignored for HVG detection. This is useful to mitigate effect of genes associated with technical artifacts or batch effects
+#' @param genesBlocklist Optionally takes a vector or list of vectors of gene names.
+#'     These genes will be ignored for HVG detection. This is useful to mitigate effect
+#'     of genes associated with technical artifacts or batch effects
 #'     (e.g. mitochondrial, heat-shock response). If set to `NULL` no genes will be excluded
 #' @param min.exp Minimum average normalized expression for HVG. If lower, the gene will be excluded
 #' @param max.exp Maximum average normalized expression for HVG. If higher, the gene will be excluded
 #' @return Returns a list of highly variable genes
 #' @import Seurat
 #' 
-FindVariableFeatures.STACAS <- function(
+FindVariableFeatures_wfilters <- function(
     obj,
     nfeatures=2000,
     genesBlockList="default",
@@ -52,10 +54,8 @@ FindVariableFeatures.STACAS <- function(
   
   varfeat <- VariableFeatures(obj)
   
-  if (is.list(genesBlockList)) {
-    genes.block <- unlist(genesBlockList) #user-provided list
-  } else if (is.vector(genesBlockList)) {
-    genes.block <- genesBlockList #user-provided vector
+  if (is.vector(genesBlockList)) {
+    genes.block <- genesBlockList # user-provided vector
   } else {
     genes.block <- NULL # No excluded genes
   }
@@ -80,7 +80,8 @@ findHVG <- function(obj.list, nfeatures=2000,
   obj.list <- lapply(obj.list, function(x){
     
     ncalc <- min(5*nfeatures, nrow(x))
-    x <- FindVariableFeatures.STACAS(x, nfeatures=ncalc, min.exp=min.exp, max.exp=max.exp, genesBlockList=hvg.blocklist)
+    x <- FindVariableFeatures_wfilters(x, nfeatures=ncalc, min.exp=min.exp, max.exp=max.exp,
+                                       genesBlockList=hvg.blocklist)
     x
   })
   hvg <- Seurat::SelectIntegrationFeatures(obj.list,nfeatures = nfeatures,
