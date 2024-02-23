@@ -150,7 +150,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   
   for (i in 1:nprogs) {
     for (j in 1:nprogs) {
-      J[i,j] <- GeneNMF:::jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
+      J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
     }  
   }
   Jdist <- as.dist(1-J)
@@ -160,13 +160,13 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- GeneNMF:::get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  max.genes=max.genes,
                                                  cl_members=cl_members)
   #Get meta-program metrics
-  metaprograms.metrics <- GeneNMF:::get_metaprogram_metrics(J=J, Jdist=Jdist,
+  metaprograms.metrics <- get_metaprogram_metrics(J=J, Jdist=Jdist,
                                                   markers.consensus=markers.consensus,
                                                   cl_members=cl_members)
   
@@ -297,8 +297,6 @@ runGSEA <- function(genes, universe=NULL,
   }
   
   msig_df <- msigdbr::msigdbr(species = "Homo sapiens", category = category, subcategory=subcategory)
-  
-  #msig_list <- msig_df %>% split(x = .$gene_symbol, f = .$gs_name)
   msig_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
   
   fgRes <- fgsea::fora(pathways = msig_list,
