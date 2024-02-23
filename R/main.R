@@ -224,8 +224,10 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' # nmf_genes <- plotMetaPrograms(mp.res)
 #' 
 #' @importFrom pheatmap pheatmap
-#' @importFrom viridis viridis
+#' @importFrom viridis viridis viridis_pal
 #' @importFrom tidytree as.phylo as.treedata
+#' @importFrom ggtree ggtree geom_tiplab
+#' @importFrom stats as.dendrogram
 #' @export  
 
 plotMetaPrograms <- function(mp.res,
@@ -241,7 +243,7 @@ plotMetaPrograms <- function(mp.res,
   cl_members <- mp.res[["programs.clusters"]]
 
   #Recover order of MP clusters
-  labs.order <- labels(tree)
+  labs.order <- labels(as.dendrogram(tree))
   cluster.order <- unique(cl_members[labs.order])
   nprograms <- length(cluster.order)
   
@@ -258,8 +260,8 @@ plotMetaPrograms <- function(mp.res,
   palette <- palette[cluster.order]
   names(palette) <- as.character(cluster.order)
   
-  treePlot <- ggtree(phy, layout="dendrogram") +
-    geom_tiplab(aes(color=cl_members)) +
+  treePlot <- ggtree::ggtree(phy, layout="dendrogram") +
+    ggtree::geom_tiplab(aes(color=cl_members)) +
     scale_color_manual(values=palette) +
     labs(color = "MP") +
     ggtitle("Gene programs clustered by Jaccard index")

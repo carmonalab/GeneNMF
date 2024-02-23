@@ -20,6 +20,7 @@ Imports: RcppML,
     pheatmap
 Suggests: knitr,
     rmarkdown,
+    ggtree,
     tidytree,
     fgsea,
     dplyr,
