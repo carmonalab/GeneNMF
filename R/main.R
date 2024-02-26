@@ -24,7 +24,10 @@
 #' @return Returns a list of NMF results
 #'
 #' @examples
-#' # NMF_results <- multiNMF(obj.list)
+#' library(Seurat)
+#' data(sampleObj)
+#' obj.list <- SplitObject(sampleObj, split.by="donor")
+#' geneNMF_programs <- multiNMF(obj.list, k=5)
 #' 
 #' @importFrom RcppML nmf
 #' @export  
@@ -83,7 +86,11 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #' @return Returns a list of top genes for each gene program
 #'
 #' @examples
-#' # nmf_genes <- getNMFgenes(nmf_results.list)
+#' library(Seurat)
+#' data(sampleObj)
+#' obj.list <- SplitObject(sampleObj, split.by="donor")
+#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_genes <- getNMFgenes(geneNMF_programs)
 #' 
 #' @importFrom NMF extractFeatures
 #' @export  
@@ -127,7 +134,11 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #' 'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
 #'
 #' @examples
-#' # markers <- getMetaPrograms(nmf_results.list)
+#' library(Seurat)
+#' data(sampleObj)
+#' obj.list <- SplitObject(sampleObj, split.by="donor")
+#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 #' 
 #' @importFrom NMF extractFeatures
 #' @importFrom stats cutree dist
@@ -225,7 +236,12 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' @return Returns a clustered heatmap of MP similaritites
 #'
 #' @examples
-#' # plotMetaPrograms(mp.res)
+#' library(Seurat)
+#' data(sampleObj)
+#' obj.list <- SplitObject(sampleObj, split.by="donor")
+#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
+#' plotMetaPrograms(geneNMF_metaprograms)
 #' 
 #' @importFrom pheatmap pheatmap
 #' @importFrom viridis viridis
@@ -296,7 +312,9 @@ plotMetaPrograms <- function(mp.res,
 #' @return Returns a table of enriched gene programs from GSEA
 #'
 #' @examples
-#' # gsea_res <- runGSEA(genevector)
+#' data(sampleObj)
+#' geneset <- c("BANK1","CD22","CD79A","CD19","IGHD","IGHG3","IGHM")
+#' gsea_res <- runGSEA(geneset, universe=rownames(sampleObj), category = "C8")
 #' 
 #' @export  
 
@@ -344,7 +362,8 @@ runGSEA <- function(genes, universe=NULL,
 #' @return Returns a Seurat object with a new dimensionality reduction (NMF)
 #'
 #' @examples
-#' # seurat <- runNMF(seurat, k=8)
+#' data(sampleObj)
+#' sampleObj <- runNMF(sampleObj, k=8)
 #' @importFrom RcppML nmf
 #' @export  
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
@@ -400,7 +419,8 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' the given parameters
 #'
 #' @examples
-#' # matrix <- getDataMatrix(seurat_object)
+#' data(sampleObj)
+#' matrix <- getDataMatrix(sampleObj)
 #' 
 #' @importFrom Seurat GetAssayData
 #' @export  
@@ -432,12 +452,16 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=
 #' @param min.exp Minimum average normalized expression for HVG. If lower, the gene will be excluded
 #' @param max.exp Maximum average normalized expression for HVG. If higher, the gene will be excluded
 #' @return Returns a list of highly variable genes
+#' @examples
+#' data(sampleObj)
+#' matrix <- findVariableFeatures_wfilters(sampleObj, nfeatures=100)
+#' 
 #' @import Seurat
 #' 
 findVariableFeatures_wfilters <- function(
     obj,
     nfeatures=2000,
-    genesBlockList="default",
+    genesBlockList=NULL,
     min.exp=0.01,
     max.exp=3)
 {

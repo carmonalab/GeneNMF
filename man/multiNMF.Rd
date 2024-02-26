@@ -59,6 +59,9 @@ Get the gene expression matrix from a Seurat object, optionally centered
 and/or subset on highly variable genes
 }
 \examples{
-# NMF_results <- multiNMF(obj.list)
+library(Seurat)
+data(sampleObj)
+obj.list <- SplitObject(sampleObj, split.by="donor")
+geneNMF_programs <- multiNMF(obj.list, k=5)
 
 }

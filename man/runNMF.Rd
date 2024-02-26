@@ -43,5 +43,6 @@ compute and load NMF embeddings for a single object, and store them in Seurat da
 structure. They can be used as an alternative to PCA for downstream analyses.
 }
 \examples{
-# seurat <- runNMF(seurat, k=8)
+data(sampleObj)
+sampleObj <- runNMF(sampleObj, k=8)
 }

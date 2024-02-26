@@ -7,7 +7,7 @@
 findVariableFeatures_wfilters(
   obj,
   nfeatures = 2000,
-  genesBlockList = "default",
+  genesBlockList = NULL,
   min.exp = 0.01,
   max.exp = 3
 )
@@ -33,4 +33,9 @@ Returns a list of highly variable genes
 Select highly variable genes (HVG) from an expression matrix. Genes from a blocklist
 (e.g. cell cycling genes, mitochondrial genes) can be excluded from the list of
 variable genes, as well as genes with very low or very high average expression
+}
+\examples{
+data(sampleObj)
+matrix <- findVariableFeatures_wfilters(sampleObj, nfeatures=100)
+
 }

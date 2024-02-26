@@ -30,6 +30,8 @@ Returns a table of enriched gene programs from GSEA
 Utility function to run GSEA over a list of genes and obtain enriched sets.
 }
 \examples{
-# gsea_res <- runGSEA(genevector)
+data(sampleObj)
+geneset <- c("BANK1","CD22","CD79A","CD19","IGHD","IGHG3","IGHM")
+gsea_res <- runGSEA(geneset, universe=rownames(sampleObj), category = "C8")
 
 }

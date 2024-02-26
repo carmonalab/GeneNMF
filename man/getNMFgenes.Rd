@@ -23,6 +23,10 @@ Returns a list of top genes for each gene program
 Run it over a list of NMF models obtained using `multiNMF`
 }
 \examples{
-# nmf_genes <- getNMFgenes(nmf_results.list)
+library(Seurat)
+data(sampleObj)
+obj.list <- SplitObject(sampleObj, split.by="donor")
+geneNMF_programs <- multiNMF(obj.list, k=5)
+geneNMF_genes <- getNMFgenes(geneNMF_programs)
 
 }

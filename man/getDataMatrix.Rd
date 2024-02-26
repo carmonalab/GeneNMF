@@ -33,6 +33,7 @@ Get the gene expression matrix from a Seurat object, optionally centered
 and/or subset on highly variable genes
 }
 \examples{
-# matrix <- getDataMatrix(seurat_object)
+data(sampleObj)
+matrix <- getDataMatrix(sampleObj)
 
 }

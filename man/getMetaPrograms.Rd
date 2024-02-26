@@ -40,6 +40,10 @@ Run it over a list of NMF models obtained using `multiNMF`; it will determine
 gene programs that are consistently observed across samples and values of k.
 }
 \examples{
-# markers <- getMetaPrograms(nmf_results.list)
+library(Seurat)
+data(sampleObj)
+obj.list <- SplitObject(sampleObj, split.by="donor")
+geneNMF_programs <- multiNMF(obj.list, k=5)
+geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 
 }
