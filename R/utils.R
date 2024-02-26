@@ -91,11 +91,15 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   #number of genes in each meta-program
   metaprograms.length <- unlist(lapply(markers.consensus,length))
   
+  #number of programs in meta-program
+  metaprograms.size <- as.character(table(cl_members))
+  
   metaprograms.metrics <- data.frame(
     sampleCoverage=unlist(sample.coverage),
     silhouette=sil.widths,
     meanJaccard=clusterJaccard,
-    numberGenes=metaprograms.length)
+    numberGenes=metaprograms.length,
+    numberPrograms=metaprograms.size)
   
   rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))
   
