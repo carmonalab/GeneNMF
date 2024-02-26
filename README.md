@@ -18,7 +18,7 @@ sampleObj <- runNMF(sampleObj, k=5)
 ```
 
 ## GeneNMF demo
-Find a demo of the functionalities of GeneNMF in the following tutorial: [NMF demo](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html)
+Find a demo of the functionalities of GeneNMF in the following tutorial: [HTML](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html) and [repository](https://github.com/carmonalab/GeneNMF.demo).
 
 ## References
 Coming soon!
