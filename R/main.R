@@ -275,6 +275,8 @@ plotMetaPrograms <- function(mp.res,
                  annotation_col = annotation_col,
                  annotation_row = annotation_col,
                  annotation_colors = annotation_colors,
+                 annotation_names_col = FALSE,
+                 annotation_names_row = FALSE,
                  show_rownames = show_rownames,
                  show_colnames = show_colnames,
                  ...
