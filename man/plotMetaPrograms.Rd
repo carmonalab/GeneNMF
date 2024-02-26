@@ -9,6 +9,7 @@ plotMetaPrograms(
   jaccard.cutoff = c(0, 0.8),
   heatmap.scale = "none",
   heatmap.palette = viridis(100, option = "A", direction = -1),
+  annotation.colors = NULL,
   heatmap.main = "Clustered Heatmap",
   ...
 )
@@ -22,12 +23,15 @@ plotMetaPrograms(
 
 \item{heatmap.palette}{Heatmap color palette (passed to pheatmap as 'color')}
 
+\item{annotation.colors}{Color palette for MP annotations (passed to
+pheatmap 'annotation_colors')}
+
 \item{heatmap.main}{Heatmap title (passed to pheatmap as 'main')}
 
 \item{...}{Additional parameters for pheatmap}
 }
 \value{
-Returns a list with a clustered heatmap and a dendrogram plots of MP similaritites
+Returns a clustered heatmap of MP similaritites
 }
 \description{
 Generates clustered heatmap and dendrogram for meta-program similarities (Jaccard index).
