@@ -195,7 +195,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   map.index <- seq_along(old.names)
   names(map.index) <- as.numeric(gsub("MetaProgram","",old.names))
   cl_members.new <- map.index[as.character(cl_members)]
-  cl_members.new[is.na(cl_members.new)] <- length(map.index)+1
+#  cl_members.new[is.na(cl_members.new)] <- length(map.index)+1
   names(cl_members.new) <- names(cl_members)
   
   output.object <- list()
@@ -247,7 +247,7 @@ plotMetaPrograms <- function(mp.res,
   cl_members <- mp.res[["programs.clusters"]]
 
   cl_names <- names(cl_members)
-  cl_members <- paste0("MP",cl_members)
+  cl_members[!is.na(cl_members)] <- paste0("MP",cl_members[!is.na(cl_members)])
   names(cl_members) <- cl_names
 
   #Recover order of MP clusters
