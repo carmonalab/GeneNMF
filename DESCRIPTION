@@ -1,7 +1,7 @@
 Package: GeneNMF
 Type: Package
 Title: Non-negative matrix factorization for single-cell omics
-Version: 0.3.4
+Version: 0.3.5
 Authors@R: c(
   person('Massimo', 'Andreatta',
     email = 'massimo.andreatta@unil.ch',
@@ -21,9 +21,7 @@ Imports: RcppML,
     stats,
     Seurat (>= 4.3.0),
     cluster,
-    pheatmap,
-    ggtree,
-    tidytree
+    pheatmap
 Suggests: knitr,
     rmarkdown,
     fgsea,

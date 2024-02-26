@@ -160,13 +160,13 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- GeneNMF:::get_metaprogram_consensus(nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  max.genes=max.genes,
                                                  cl_members=cl_members)
   #Get meta-program metrics
-  metaprograms.metrics <- get_metaprogram_metrics(J=J, Jdist=Jdist,
+  metaprograms.metrics <- GeneNMF:::get_metaprogram_metrics(J=J, Jdist=Jdist,
                                                   markers.consensus=markers.consensus,
                                                   cl_members=cl_members)
   
@@ -217,17 +217,17 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' @param jaccard.cutoff Min and max values for plotting the Jaccard index
 #' @param heatmap.scale Heatmap rescaling (passed to pheatmap as 'scale')
 #' @param heatmap.palette Heatmap color palette (passed to pheatmap as 'color')
+#' @param annotation.colors Color palette for MP annotations (passed to
+#'     pheatmap 'annotation_colors')
 #' @param heatmap.main Heatmap title (passed to pheatmap as 'main')
 #' @param ... Additional parameters for pheatmap
-#' @return Returns a list with a clustered heatmap and a dendrogram plots of MP similaritites
+#' @return Returns a clustered heatmap of MP similaritites
 #'
 #' @examples
 #' # nmf_genes <- plotMetaPrograms(mp.res)
 #' 
 #' @importFrom pheatmap pheatmap
-#' @importFrom viridis viridis viridis_pal
-#' @importFrom tidytree as.phylo as.treedata
-#' @importFrom ggtree ggtree geom_tiplab
+#' @importFrom viridis viridis
 #' @importFrom stats as.dendrogram
 #' @export  
 
@@ -235,43 +235,29 @@ plotMetaPrograms <- function(mp.res,
                             jaccard.cutoff=c(0,0.8),
                             heatmap.scale = "none",
                             heatmap.palette = viridis(100, option="A", direction=-1),
+                            annotation.colors = NULL,
                             heatmap.main = "Clustered Heatmap",
                             ...) {
-  
-  output.object <- list()
+
+  J <- mp.res[["programs.jaccard"]]
   tree <- mp.res[["programs.tree"]]
   cl_members <- mp.res[["programs.clusters"]]
 
   cl_names <- names(cl_members)
   cl_members <- paste0("MP",cl_members)
   names(cl_members) <- cl_names
+
   #Recover order of MP clusters
   labs.order <- labels(as.dendrogram(tree))
   cluster.order <- unique(cl_members[labs.order])
   nprograms <- length(cluster.order)
   
-  #Add MP cluster data to tree object
-  phy <- as.phylo(tree)
-  meta <- as.data.frame(cl_members)
-  meta$label <- rownames(meta)
-  meta$cl_members <- factor(meta$cl_members, levels=cluster.order)
-  x <- full_join(as_tibble(phy), meta, by = c("label" = "label"))
-  phy <- as.treedata(x)
-  
-  palette <- viridis_pal(option = "turbo", direction = 1)(nprograms)
-  palette <- palette[as.numeric(gsub("MP","",cluster.order))]
-  names(palette) <- cluster.order
-  
-  treePlot <- ggtree::ggtree(phy, layout="dendrogram") +
-    ggtree::geom_tiplab(aes(color=cl_members)) +
-    scale_color_manual(values=palette) +
-    labs(color = "Metaprogram") +
-    ggtitle("Gene programs clustered by Jaccard index")
-    
-  output.object[["tree"]] <- treePlot
-  
-  J <- mp.res[["programs.jaccard"]]
-    
+  #Annotation column
+  annotation_col <- as.data.frame(cl_members)
+  colnames(annotation_col) <- "Metaprogram"
+  annotation_col[["Metaprogram"]] <- factor(cl_members, levels=cluster.order)
+
+  #Apply trimming to Jaccard for plotting  
   J[J<jaccard.cutoff[1]] <- jaccard.cutoff[1]
   J[J>jaccard.cutoff[2]] <- jaccard.cutoff[2]
   
@@ -283,10 +269,12 @@ plotMetaPrograms <- function(mp.res,
                  cluster_cols = tree,
                  cutree_rows = nprograms,
                  cutree_cols = nprograms,
+                 annotation_col = annotation_col,
+                 annotation_row = annotation_col,
+                 annotation_colors = annotation.colors,
                  ...
   )
-  output.object[["heatmap"]] <- ph
-  return(output.object)
+  return(ph)
 }  
 
 #' Run Gene set enrichment analysis

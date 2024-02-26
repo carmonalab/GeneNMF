@@ -80,8 +80,12 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   clusterJaccard <- rep(NA,nprograms)
   for(i in seq_len(nprograms)){
     selectMP <- which(cl_members==i)
-    selectJ <- J[selectMP,selectMP]
-    value <- round(mean(selectJ[upper.tri(selectJ)]),3)
+    if (length(selectMP) > 1) { #needs at least two values
+      selectJ <- J[selectMP,selectMP]
+      value <- round(mean(selectJ[upper.tri(selectJ)]),3)
+    } else {
+      value <- 0
+    }
     clusterJaccard[i] <- value
   }
   #number of genes in each meta-program
