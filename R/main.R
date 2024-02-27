@@ -32,8 +32,7 @@
 #' @examples
 #' library(Seurat)
 #' data(sampleObj)
-#' obj.list <- SplitObject(sampleObj, split.by="donor")
-#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' 
 #' @importFrom RcppML nmf
 #' @export  
@@ -96,8 +95,7 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #' @examples
 #' library(Seurat)
 #' data(sampleObj)
-#' obj.list <- SplitObject(sampleObj, split.by="donor")
-#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_genes <- getNMFgenes(geneNMF_programs)
 #' 
 #' @importFrom NMF extractFeatures
@@ -151,8 +149,7 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
 #' @examples
 #' library(Seurat)
 #' data(sampleObj)
-#' obj.list <- SplitObject(sampleObj, split.by="donor")
-#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 #' 
 #' @importFrom NMF extractFeatures
@@ -253,8 +250,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' @examples
 #' library(Seurat)
 #' data(sampleObj)
-#' obj.list <- SplitObject(sampleObj, split.by="donor")
-#' geneNMF_programs <- multiNMF(obj.list, k=5)
+#' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 #' plotMetaPrograms(geneNMF_metaprograms)
 #' 

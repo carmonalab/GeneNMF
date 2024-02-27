@@ -51,8 +51,7 @@ and values of k.
 \examples{
 library(Seurat)
 data(sampleObj)
-obj.list <- SplitObject(sampleObj, split.by="donor")
-geneNMF_programs <- multiNMF(obj.list, k=5)
+geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 
 }
