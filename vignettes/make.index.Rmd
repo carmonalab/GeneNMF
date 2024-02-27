@@ -1,0 +1,16 @@
+---
+title: Index of GeneNMF vignettes
+author: "M. Andreatta, S. Carmona"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Index of GeneNMF vignettes}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+Currently available GeneNMF vignettes:
+
+1. A demo of the **basic functionalities** of GeneNMF on PBMC scRNA-seq data - [GeneNMF basics](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html).
+
+More information available at the [GeneNMF repository](https://github.com/carmonalab/GeneNMF) and [GeneNMF demo repository](https://github.com/carmonalab/GeneNMF.demo).
+
