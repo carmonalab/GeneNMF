@@ -2,7 +2,7 @@
 % Please edit documentation in R/main.R
 \name{multiNMF}
 \alias{multiNMF}
-\title{RunNMF on a list of Seurat objects}
+\title{Run NMF on a list of Seurat objects}
 \usage{
 multiNMF(
   obj.list,
@@ -30,7 +30,7 @@ multiNMF(
 \item{k}{Number of target components for NMF (can be a vector)}
 
 \item{hvg}{List of pre-calculated variable genes to subset the matrix.
-If hvg=NULL it calculates them using}
+If hvg=NULL it calculates them automatically}
 
 \item{nfeatures}{Number of HVG, if calculate_hvg=TRUE}
 
@@ -42,21 +42,26 @@ If hvg=NULL it calculates them using}
 
 \item{do_centering}{Whether to center the data matrix}
 
-\item{min.cells.per.sample}{Minimum numer of cells per sample (smaller samples will be ignored)}
+\item{min.cells.per.sample}{Minimum numer of cells per sample (smaller 
+samples will be ignored)}
 
-\item{hvg.blocklist}{Optionally takes a vector or list of vectors of gene names. These genes will be ignored for HVG detection. This is useful to mitigate effect of genes associated with technical artifacts and batch effects (e.g. mitochondrial), and to exclude TCR and BCR adaptive immune (clone-specific) receptors.
-If set to `NULL` no genes will be excluded}
+\item{hvg.blocklist}{Optionally takes a vector or list of vectors of gene
+names. These genes will be ignored for HVG detection. This is useful
+to mitigateeffect of genes associated with technical artifacts and
+batch effects (e.g. mitochondrial), and to exclude TCR and BCR 
+adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
+will be excluded}
 
 \item{seed}{Random seed}
-
-\item{calculate_hvg}{Whether to compute highly variable features}
 }
 \value{
-Returns a list of NMF results
+Returns a list of NMF programs, one for each sample and for each
+    value of 'k'. The format of each program in the list follosw the
+    structure of \code{\link[RcppML]{nmf}} factorization models.
 }
 \description{
-Get the gene expression matrix from a Seurat object, optionally centered
-and/or subset on highly variable genes
+Given a list of Seurat objects, run non-negative matrix factorization on 
+each sample individually, over a range of target NMF components (k).
 }
 \examples{
 library(Seurat)

@@ -39,7 +39,7 @@ runNMF(
 Returns a Seurat object with a new dimensionality reduction (NMF)
 }
 \description{
-compute and load NMF embeddings for a single object, and store them in Seurat data
+Compute NMF embeddings for single-cell dataset, and store them in the Seurat data
 structure. They can be used as an alternative to PCA for downstream analyses.
 }
 \examples{

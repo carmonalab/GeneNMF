@@ -17,17 +17,18 @@ findVariableFeatures_wfilters(
 
 \item{nfeatures}{Number of top HVG to be returned}
 
-\item{min.exp}{Minimum average normalized expression for HVG. If lower, the gene will be excluded}
-
-\item{max.exp}{Maximum average normalized expression for HVG. If higher, the gene will be excluded}
-
-\item{genesBlocklist}{Optionally takes a vector or list of vectors of gene names.
+\item{genesBlockList}{Optionally takes a vector or list of vectors of gene names.
 These genes will be ignored for HVG detection. This is useful to mitigate effect
 of genes associated with technical artifacts or batch effects
 (e.g. mitochondrial, heat-shock response). If set to `NULL` no genes will be excluded}
+
+\item{min.exp}{Minimum average normalized expression for HVG. If lower, the gene will be excluded}
+
+\item{max.exp}{Maximum average normalized expression for HVG. If higher, the gene will be excluded}
 }
 \value{
-Returns a list of highly variable genes
+Returns the input Seurat object \code{obj} with the calculated highly 
+    variable features accessible through \code{VariableFeatures(obj)}
 }
 \description{
 Select highly variable genes (HVG) from an expression matrix. Genes from a blocklist
@@ -36,6 +37,6 @@ variable genes, as well as genes with very low or very high average expression
 }
 \examples{
 data(sampleObj)
-matrix <- findVariableFeatures_wfilters(sampleObj, nfeatures=100)
+sampleObj <- findVariableFeatures_wfilters(sampleObj, nfeatures=100)
 
 }

@@ -31,7 +31,8 @@ type \code{msigdbr::msigdbr_species()}}
 Returns a table of enriched gene programs from GSEA
 }
 \description{
-Utility function to run GSEA over a list of genes and obtain enriched sets.
+Utility function to run Gene set enrichment analysis (GSEA) against gene 
+sets from MSigDB.
 }
 \examples{
 data(sampleObj)

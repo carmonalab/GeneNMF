@@ -1,27 +1,33 @@
-#' RunNMF on a list of Seurat objects
+#' Run NMF on a list of Seurat objects
 #'
-#' Get the gene expression matrix from a Seurat object, optionally centered
-#' and/or subset on highly variable genes
+#' Given a list of Seurat objects, run non-negative matrix factorization on 
+#' each sample individually, over a range of target NMF components (k).
 #'
 #' @param obj.list A list of Seurat objects
 #' @param k Number of target components for NMF (can be a vector)
 #' @param assay Get data matrix from this assay
 #' @param slot Get data matrix from this slot (=layer)
-#' @param calculate_hvg Whether to compute highly variable features
 #' @param hvg List of pre-calculated variable genes to subset the matrix.
-#'     If hvg=NULL it calculates them using 
+#'     If hvg=NULL it calculates them automatically
 #' @param nfeatures Number of HVG, if calculate_hvg=TRUE
 #' @param do_centering Whether to center the data matrix
-#' @param hvg.blocklist Optionally takes a vector or list of vectors of gene names. These genes will be ignored for HVG detection. This is useful to mitigate effect of genes associated with technical artifacts and batch effects (e.g. mitochondrial), and to exclude TCR and BCR adaptive immune (clone-specific) receptors.
-#'  If set to `NULL` no genes will be excluded
+#' @param hvg.blocklist Optionally takes a vector or list of vectors of gene
+#'     names. These genes will be ignored for HVG detection. This is useful
+#'     to mitigateeffect of genes associated with technical artifacts and
+#'     batch effects (e.g. mitochondrial), and to exclude TCR and BCR 
+#'     adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
+#'     will be excluded
 #' @param L1 L1 regularization term for NMF
-#' @param min.cells.per.sample Minimum numer of cells per sample (smaller samples will be ignored)
+#' @param min.cells.per.sample Minimum numer of cells per sample (smaller 
+#'     samples will be ignored)
 #' @param min.exp Minimum average log-expression value for retaining genes
 #' @param max.exp Maximum average log-expression value for retaining genes
 
 #' @param seed Random seed     
 #'     
-#' @return Returns a list of NMF results
+#' @return Returns a list of NMF programs, one for each sample and for each
+#'     value of 'k'. The format of each program in the list follosw the
+#'     structure of \code{\link[RcppML]{nmf}} factorization models.
 #'
 #' @examples
 #' library(Seurat)
@@ -31,7 +37,6 @@
 #' 
 #' @importFrom RcppML nmf
 #' @export  
-
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
                    min.exp=0.01, max.exp=3.0, do_centering=TRUE,
@@ -68,22 +73,25 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
     names(res.k) <- paste0("k",k)
     res.k
   })
-  nmf.res <- unlist(nmf.res, recursive = F)
+  nmf.res <- unlist(nmf.res, recursive = FALSE)
   
   return(nmf.res)
 }  
 
 #' Get list of genes for each NMF program
 #'
-#' Run it over a list of NMF models obtained using `multiNMF`
+#' Run it over a list of NMF models obtained using \code{multiNMF()}
 #'
-#' @param nmf.res A list of NMF models obtained from `multiNMF`
-#' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
-#'     for each program. When 'method' is a number between 0 and 1, it indicates
+#' @param nmf.res A list of NMF models obtained using \code{multiNMF()}
+#' @param method Parameter passed to \code{\link[NMF]{extractFeatures}} to
+#'     obtain top genes for each program. When 'method' is a number between 0 
+#'     and 1, it indicates
 #'     the minimum relative basis contribution above which the feature is
 #'     selected, i.e. how specific is a gene for a given program.
-#' @param max.genes Max number of genes for each programs     
-#' @return Returns a list of top genes for each gene program
+#' @param max.genes Max number of genes for each program 
+#'     
+#' @return Returns a list of top genes for each gene program found
+#'     by \code{multiNMF()}
 #'
 #' @examples
 #' library(Seurat)
@@ -94,7 +102,6 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #' 
 #' @importFrom NMF extractFeatures
 #' @export  
-
 getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
   
   nmf.genes <- lapply(nmf.res, function(model) {
@@ -112,26 +119,34 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
     m
   })
   
-  nmf.genes <- unlist(nmf.genes, recursive = F)
+  nmf.genes <- unlist(nmf.genes, recursive = FALSE)
   return(nmf.genes)
 }
-
 #' Extract consensus gene programs (meta-programs)
 #'
-#' Run it over a list of NMF models obtained using `multiNMF`; it will determine
-#' gene programs that are consistently observed across samples and values of k.
+#' Run it over a list of NMF models obtained using \code{\link{multiNMF}}; it will 
+#' determine gene programs that are consistently observed across samples 
+#' and values of k.
 #'
-#' @param nmf.res A list of NMF models obtained from `multiNMF`
-#' @param method Parameter passed to `NMF::extractFeatures` to obtain top genes
-#'     for each program
+#' @param nmf.res A list of NMF models obtained from \code{\link{multiNMF}}
+#' @param method Parameter passed to \code{\link[NMF]{extractFeatures}} to 
+#'     obtain top genes for each program
 #' @param max.genes Max number of genes for each programs
 #' @param hclust.method Method to build similarity tree between individual programs
 #' @param nprograms Total number of meta-programs
-#' @param min.confidence Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
-#'      in the consensus metaprograms
-#' @param remove.empty Whether to remove meta-programs with no genes above confidence threshold      
-#' @return Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs stats: a) freq. of samples where the MP is present, b) average silhouette width, c) mean Jaccard similarity, and d) number of genes in MP; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
-#' 'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
+#' @param min.confidence Percentage of programs in which a gene is seen 
+#'      (out of programs in the corresponding program tree branch/cluster), to be 
+#'      retained in the consensus metaprograms
+#' @param remove.empty Whether to remove meta-programs with no genes above 
+#' confidence threshold      
+#' @return Returns a list with i) 'metaprograms.genes' top genes for each 
+#'     meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs 
+#'     statistics: a) freq. of samples where the MP is present, b) average 
+#'     silhouette width, c) mean Jaccard similarity, d) number of genes in MP, 
+#'     e) number of gene programs in MP; iii) 'programs.jaccard': matrix of 
+#'     Jaccard similarities between meta-programs; iv) 'programs.tree': 
+#'     hierarchical clustering of meta-programs (hclust tree); v) 
+#'     'programs.clusters': meta-program identity for each program
 #'
 #' @examples
 #' library(Seurat)
@@ -144,7 +159,6 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
 #' @importFrom stats cutree dist
 #' @importFrom cluster silhouette
 #' @export  
-
 getMetaPrograms <- function(nmf.res, method=0.5,
                             max.genes=200,
                             hclust.method="ward.D2",
@@ -206,7 +220,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
   map.index <- seq_along(old.names)
   names(map.index) <- as.numeric(gsub("MetaProgram","",old.names))
   cl_members.new <- map.index[as.character(cl_members)]
-#  cl_members.new[is.na(cl_members.new)] <- length(map.index)+1
+
   names(cl_members.new) <- names(cl_members)
   
   output.object <- list()
@@ -220,11 +234,12 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 
 #' Visualizations for meta-programs
 #'
-#' Generates clustered heatmap and dendrogram for meta-program similarities (Jaccard index).
-#' This function is meant to be run on the object generated by 'GeneNMF::getMetaPrograms', which
-#' contains a pre-calculated tree of pairwise similarities between clusters (as a 'hclust' object).
+#' Generates a clustered heatmap for meta-program similarities (by Jaccard 
+#' index). This function is intended to be run on the object generated by 
+#' \code{\link[GeneNMF]{getMetaPrograms}}, which contains a pre-calculated 
+#' tree of pairwise similarities between clusters (as a 'hclust' object).
 #'
-#' @param mp.res The meta-programs object generated by `getMetaPrograms`
+#' @param mp.res The meta-programs object generated by \code{\link{getMetaPrograms}}
 #' @param jaccard.cutoff Min and max values for plotting the Jaccard index
 #' @param scale Heatmap rescaling (passed to pheatmap as 'scale')
 #' @param palette Heatmap color palette (passed to pheatmap as 'color')
@@ -233,7 +248,7 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' @param show_rownames Whether to display individual program names as rows
 #' @param show_colnames Whether to display individual program names as cols
 #' @param ... Additional parameters for pheatmap
-#' @return Returns a clustered heatmap of MP similaritites
+#' @return Returns a clustered heatmap of MP similarities, in ggplot2 format
 #'
 #' @examples
 #' library(Seurat)
@@ -247,7 +262,6 @@ getMetaPrograms <- function(nmf.res, method=0.5,
 #' @importFrom viridis viridis
 #' @importFrom stats as.dendrogram
 #' @export  
-
 plotMetaPrograms <- function(mp.res,
                             jaccard.cutoff=c(0,0.8),
                             scale = "none",
@@ -302,7 +316,8 @@ plotMetaPrograms <- function(mp.res,
 
 #' Run Gene set enrichment analysis
 #'
-#' Utility function to run GSEA over a list of genes and obtain enriched sets.
+#' Utility function to run Gene set enrichment analysis (GSEA) against gene 
+#' sets from MSigDB.
 #'
 #' @param genes A vector of genes
 #' @param universe Background universe of gene symbols (passed on to \code{fgsea::fora})
@@ -319,7 +334,6 @@ plotMetaPrograms <- function(mp.res,
 #' gsea_res <- runGSEA(geneset, universe=rownames(sampleObj), category = "C8")
 #' 
 #' @export  
-
 runGSEA <- function(genes, universe=NULL,
                     category="H", subcategory=NULL,
                     species="Homo sapiens",
@@ -350,7 +364,7 @@ runGSEA <- function(genes, universe=NULL,
 
 #' Compute NMF as a low-dim embedding for Seurat
 #'
-#' compute and load NMF embeddings for a single object, and store them in Seurat data
+#' Compute NMF embeddings for single-cell dataset, and store them in the Seurat data
 #' structure. They can be used as an alternative to PCA for downstream analyses.
 #' 
 #' @param obj A seurat object
@@ -418,8 +432,8 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #'     all genes
 #' @param do_centering Whether to center the data matrix
 #'     
-#' @return Returns a data matrix (cells per genes), subset according to
-#' the given parameters
+#' @return Returns a sparse data matrix (cells per genes), subset 
+#' according to the given parameters
 #'
 #' @examples
 #' data(sampleObj)
@@ -448,17 +462,19 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=
 #'
 #' @param obj A Seurat object containing an expression matrix
 #' @param nfeatures Number of top HVG to be returned
-#' @param genesBlocklist Optionally takes a vector or list of vectors of gene names.
+#' @param genesBlockList Optionally takes a vector or list of vectors of gene names.
 #'     These genes will be ignored for HVG detection. This is useful to mitigate effect
 #'     of genes associated with technical artifacts or batch effects
 #'     (e.g. mitochondrial, heat-shock response). If set to `NULL` no genes will be excluded
 #' @param min.exp Minimum average normalized expression for HVG. If lower, the gene will be excluded
 #' @param max.exp Maximum average normalized expression for HVG. If higher, the gene will be excluded
-#' @return Returns a list of highly variable genes
+#' @return Returns the input Seurat object \code{obj} with the calculated highly 
+#'     variable features accessible through \code{VariableFeatures(obj)} 
 #' @examples
 #' data(sampleObj)
-#' matrix <- findVariableFeatures_wfilters(sampleObj, nfeatures=100)
+#' sampleObj <- findVariableFeatures_wfilters(sampleObj, nfeatures=100)
 #' 
+#' @export
 #' @import Seurat
 #' 
 findVariableFeatures_wfilters <- function(
@@ -471,7 +487,7 @@ findVariableFeatures_wfilters <- function(
   
   assay <- DefaultAssay(obj)
   #Calculate a fixed number of HVG, then filtered to nfeat at the end
-  obj <- Seurat::FindVariableFeatures(obj, nfeatures = 10000, verbose=F)
+  obj <- Seurat::FindVariableFeatures(obj, nfeatures = 10000, verbose=FALSE)
   
   varfeat <- VariableFeatures(obj)
   
@@ -482,8 +498,7 @@ findVariableFeatures_wfilters <- function(
   }
   
   varfeat <- setdiff(varfeat, genes.block)
-  
-  #Also remove genes that are very poorly or always expressed (=not really variable genes)
+  #Also remove genes that are very poorly or always expressed
   means <- apply(GetAssayData(obj, assay=assay, slot="data")[varfeat,], 1, mean)
   removeGenes2 <- names(means[means<min.exp | means>max.exp])
   

@@ -25,8 +25,8 @@ all genes}
 \item{do_centering}{Whether to center the data matrix}
 }
 \value{
-Returns a data matrix (cells per genes), subset according to
-the given parameters
+Returns a sparse data matrix (cells per genes), subset 
+according to the given parameters
 }
 \description{
 Get the gene expression matrix from a Seurat object, optionally centered

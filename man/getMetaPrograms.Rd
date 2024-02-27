@@ -15,10 +15,10 @@ getMetaPrograms(
 )
 }
 \arguments{
-\item{nmf.res}{A list of NMF models obtained from `multiNMF`}
+\item{nmf.res}{A list of NMF models obtained from \code{\link{multiNMF}}}
 
-\item{method}{Parameter passed to `NMF::extractFeatures` to obtain top genes
-for each program}
+\item{method}{Parameter passed to \code{\link[NMF]{extractFeatures}} to 
+obtain top genes for each program}
 
 \item{max.genes}{Max number of genes for each programs}
 
@@ -26,18 +26,27 @@ for each program}
 
 \item{nprograms}{Total number of meta-programs}
 
-\item{min.confidence}{Percentage of programs in which a gene is seen (out of programs in the corresponding program tree branch/cluster), to be retained
-in the consensus metaprograms}
+\item{min.confidence}{Percentage of programs in which a gene is seen 
+(out of programs in the corresponding program tree branch/cluster), to be 
+retained in the consensus metaprograms}
 
-\item{remove.empty}{Whether to remove meta-programs with no genes above confidence threshold}
+\item{remove.empty}{Whether to remove meta-programs with no genes above 
+confidence threshold}
 }
 \value{
-Returns a list with i) 'metaprograms.genes' top genes for each meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs stats: a) freq. of samples where the MP is present, b) average silhouette width, c) mean Jaccard similarity, and d) number of genes in MP; iii) 'programs.jaccard': matrix of Jaccard similarities between meta-programs; iv) 
-'programs.tree': hierarchical clustering of meta-programs (hclust tree); v) 'programs.clusters': meta-program assignment to each program
+Returns a list with i) 'metaprograms.genes' top genes for each 
+    meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs 
+    statistics: a) freq. of samples where the MP is present, b) average 
+    silhouette width, c) mean Jaccard similarity, d) number of genes in MP, 
+    e) number of gene programs in MP; iii) 'programs.jaccard': matrix of 
+    Jaccard similarities between meta-programs; iv) 'programs.tree': 
+    hierarchical clustering of meta-programs (hclust tree); v) 
+    'programs.clusters': meta-program identity for each program
 }
 \description{
-Run it over a list of NMF models obtained using `multiNMF`; it will determine
-gene programs that are consistently observed across samples and values of k.
+Run it over a list of NMF models obtained using \code{\link{multiNMF}}; it will 
+determine gene programs that are consistently observed across samples 
+and values of k.
 }
 \examples{
 library(Seurat)

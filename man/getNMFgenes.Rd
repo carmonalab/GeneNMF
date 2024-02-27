@@ -7,20 +7,22 @@
 getNMFgenes(nmf.res, method = 0.5, max.genes = 200)
 }
 \arguments{
-\item{nmf.res}{A list of NMF models obtained from `multiNMF`}
+\item{nmf.res}{A list of NMF models obtained using \code{multiNMF()}}
 
-\item{method}{Parameter passed to `NMF::extractFeatures` to obtain top genes
-for each program. When 'method' is a number between 0 and 1, it indicates
+\item{method}{Parameter passed to \code{\link[NMF]{extractFeatures}} to
+obtain top genes for each program. When 'method' is a number between 0 
+and 1, it indicates
 the minimum relative basis contribution above which the feature is
 selected, i.e. how specific is a gene for a given program.}
 
-\item{max.genes}{Max number of genes for each programs}
+\item{max.genes}{Max number of genes for each program}
 }
 \value{
-Returns a list of top genes for each gene program
+Returns a list of top genes for each gene program found
+    by \code{multiNMF()}
 }
 \description{
-Run it over a list of NMF models obtained using `multiNMF`
+Run it over a list of NMF models obtained using \code{multiNMF()}
 }
 \examples{
 library(Seurat)
