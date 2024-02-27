@@ -7,10 +7,10 @@
 getMetaPrograms(
   nmf.res,
   method = 0.5,
-  max.genes = 50,
+  max.genes = 200,
   hclust.method = "ward.D2",
   nprograms = 10,
-  min.confidence = 0.3,
+  min.confidence = 0.2,
   remove.empty = TRUE
 )
 }

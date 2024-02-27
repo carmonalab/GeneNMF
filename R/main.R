@@ -95,7 +95,7 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #' @importFrom NMF extractFeatures
 #' @export  
 
-getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
+getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
   
   nmf.genes <- lapply(nmf.res, function(model) {
     
@@ -146,10 +146,10 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=50) {
 #' @export  
 
 getMetaPrograms <- function(nmf.res, method=0.5,
-                            max.genes=50,
+                            max.genes=200,
                             hclust.method="ward.D2",
                             nprograms=10,
-                            min.confidence=0.3,
+                            min.confidence=0.2,
                             remove.empty=TRUE) {
   
   nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
