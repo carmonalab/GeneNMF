@@ -9,17 +9,21 @@ runGSEA(
   universe = NULL,
   category = "H",
   subcategory = NULL,
+  species = "Homo sapiens",
   pval.thr = 0.05
 )
 }
 \arguments{
 \item{genes}{A vector of genes}
 
-\item{universe}{Background universe of gene symbols (passed on to `fgsea::fora`)}
+\item{universe}{Background universe of gene symbols (passed on to \code{fgsea::fora})}
 
 \item{category}{GSEA main category (e.g. "H" or "C5")}
 
 \item{subcategory}{GSEA subcategory}
+
+\item{species}{Species for GSEA analysis. For a list of the available species,
+type \code{msigdbr::msigdbr_species()}}
 
 \item{pval.thr}{Min p-value to include results}
 }

@@ -305,9 +305,11 @@ plotMetaPrograms <- function(mp.res,
 #' Utility function to run GSEA over a list of genes and obtain enriched sets.
 #'
 #' @param genes A vector of genes
-#' @param universe Background universe of gene symbols (passed on to `fgsea::fora`)
+#' @param universe Background universe of gene symbols (passed on to \code{fgsea::fora})
 #' @param category GSEA main category (e.g. "H" or "C5")
 #' @param subcategory GSEA subcategory
+#' @param species Species for GSEA analysis. For a list of the available species,
+#'     type \code{msigdbr::msigdbr_species()}
 #' @param pval.thr Min p-value to include results
 #' @return Returns a table of enriched gene programs from GSEA
 #'
@@ -320,6 +322,7 @@ plotMetaPrograms <- function(mp.res,
 
 runGSEA <- function(genes, universe=NULL,
                     category="H", subcategory=NULL,
+                    species="Homo sapiens",
                     pval.thr=0.05) {
   
   
@@ -333,7 +336,7 @@ runGSEA <- function(genes, universe=NULL,
     genes <- genes[!duplicated(genes)]
   }
   
-  msig_df <- msigdbr::msigdbr(species = "Homo sapiens", category = category, subcategory=subcategory)
+  msig_df <- msigdbr::msigdbr(species = species, category = category, subcategory=subcategory)
   msig_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
   
   fgRes <- fgsea::fora(pathways = msig_list,
