@@ -8,7 +8,7 @@
 A sparse matrix of 50 cells and 20729 genes.
 }
 \source{
-\url{https://doi.org/10.1016/j.cell.2021.04.048}
+\doi{10.1016/j.cell.2021.04.048}
 }
 \usage{
 sampleObj
@@ -21,7 +21,7 @@ counts for each cell were divided by the total counts for that cell and
 multiplied by 10,000, then natural-log transformed using `log1p`. \cr\cr
 This a subsample of 25 predicted B cells and 25 predicted NK cells from
 the large scRNA-seq PBMC dataset published
-by \href{https://doi.org/10.1016/j.cell.2021.04.048}{Hao et al.} and
+by Hao et al. (\doi{10.1016/j.cell.2021.04.048}) and
 available as UMI counts at
 \url{https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat}
 }
