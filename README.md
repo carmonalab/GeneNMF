@@ -9,6 +9,11 @@ Non-negative matrix factorization is a method for the analysis of high dimension
 **GeneNMF** is a package that implements methods for NMF decomposition for single-cell omics data. It can be applied directly on Seurat objects to reduce the dimensionality of the data and to detect robust gene programs across multiple samples.  
 
 ## Installation
+Install release version from [CRAN](https://CRAN.R-project.org/package=GeneNMF):
+```r
+install.package("GeneNMF")
+```
+For the development version of GeneNMF, install from GitHub:
 ```r
 library(remotes)
 remotes::install_github("carmonalab/GeneNMF")
