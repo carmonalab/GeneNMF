@@ -251,6 +251,7 @@ getNMFgenes <- function(nmf.res, method=0.5, quantile=0.90, max.genes=200) {
 #' @importFrom NMF extractFeatures
 #' @importFrom stats cutree dist
 #' @importFrom cluster silhouette
+#' @importFrom lsa cosine
 #' @export  
 getMetaPrograms <- function(nmf.res, method=0.5,
                             max.genes=200,

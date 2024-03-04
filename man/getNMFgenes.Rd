@@ -4,7 +4,7 @@
 \alias{getNMFgenes}
 \title{Get list of genes for each NMF program}
 \usage{
-getNMFgenes(nmf.res, method = 0.5, max.genes = 200)
+getNMFgenes(nmf.res, method = 0.5, quantile = 0.9, max.genes = 200)
 }
 \arguments{
 \item{nmf.res}{A list of NMF models obtained using \code{multiNMF()}}

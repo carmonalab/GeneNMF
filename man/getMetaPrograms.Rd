@@ -11,6 +11,7 @@ getMetaPrograms(
   hclust.method = "ward.D2",
   nprograms = 10,
   min.confidence = 0.2,
+  metric = c("jaccard", "cosine"),
   remove.empty = TRUE
 )
 }
@@ -29,6 +30,8 @@ obtain top genes for each program}
 \item{min.confidence}{Percentage of programs in which a gene is seen 
 (out of programs in the corresponding program tree branch/cluster), to be 
 retained in the consensus metaprograms}
+
+\item{metric}{Metric to calculate pairwise similarity between programs}
 
 \item{remove.empty}{Whether to remove meta-programs with no genes above 
 confidence threshold}
