@@ -10,7 +10,8 @@
 #' @param hvg List of pre-calculated variable genes to subset the matrix.
 #'     If hvg=NULL it calculates them automatically
 #' @param nfeatures Number of HVG, if calculate_hvg=TRUE
-#' @param do_centering Whether to center the data matrix
+#' @param center Whether to center the data matrix
+#' @param scale Whether to scale the data matrix
 #' @param hvg.blocklist Optionally takes a vector or list of vectors of gene
 #'     names. These genes will be ignored for HVG detection. This is useful
 #'     to mitigateeffect of genes associated with technical artifacts and
@@ -38,7 +39,8 @@
 #' @export  
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
-                   min.exp=0.01, max.exp=3.0, do_centering=TRUE,
+                   min.exp=0.01, max.exp=3.0,
+                   center=TRUE, scale=FALSE,
                    min.cells.per.sample = 10,
                    hvg.blocklist=NULL, seed=123) {
   
@@ -57,7 +59,8 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   nmf.res <- lapply(obj.list, function(this) {
     
     mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
-                      hvg=hvg, do_centering=do_centering)
+                      hvg=hvg, do_centering=center,
+                      do_scaling=scale)
     
     res.k <- lapply(k, function(k.this) {
       
@@ -76,6 +79,84 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   
   return(nmf.res)
 }  
+
+#' Run PCA on a list of Seurat objects
+#'
+#' Given a list of Seurat objects, run non-negative PCA factorization on 
+#' each sample individually.
+#'
+#' @param obj.list A list of Seurat objects
+#' @param k Number of target components for PCA
+#' @param assay Get data matrix from this assay
+#' @param slot Get data matrix from this slot (=layer)
+#' @param hvg List of pre-calculated variable genes to subset the matrix.
+#'     If hvg=NULL it calculates them automatically
+#' @param nfeatures Number of HVG, if calculate_hvg=TRUE
+#' @param center Whether to center the data matrix
+#' @param scale Whether to scale the data matrix
+#' @param hvg.blocklist Optionally takes a vector or list of vectors of gene
+#'     names. These genes will be ignored for HVG detection. This is useful
+#'     to mitigateeffect of genes associated with technical artifacts and
+#'     batch effects (e.g. mitochondrial), and to exclude TCR and BCR 
+#'     adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
+#'     will be excluded
+#' @param min.cells.per.sample Minimum numer of cells per sample (smaller 
+#'     samples will be ignored)
+#' @param min.exp Minimum average log-expression value for retaining genes
+#' @param max.exp Maximum average log-expression value for retaining genes
+
+#' @param seed Random seed     
+#'     
+#' @return Returns a list of non-negative PCA programs, one for each sample.
+#'     The format of each program in the list follows the
+#'     structure of \code{\link[RcppML]{nmf}} factorization models.
+#'
+#' @examples
+#' library(Seurat)
+#' data(sampleObj)
+#' geneNMF_programs <- multiPCA(list(sampleObj), k=5)
+#' 
+#' @importFrom irlba prcomp_irlba
+#' @export  
+
+multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
+                     hvg=NULL, nfeatures = 500,
+                     min.exp=0.01, max.exp=3.0,
+                     min.cells.per.sample = 10,
+                     center=TRUE, scale=TRUE,
+                     hvg.blocklist=NULL, seed=123) {
+  
+  set.seed(seed)
+  
+  #exclude small samples
+  nc <- lapply(obj.list, ncol)
+  obj.list <- obj.list[nc > min.cells.per.sample]
+  
+  if (is.null(hvg)) {
+    hvg <- GeneNMF:::findHVG(obj.list, nfeatures=nfeatures,
+                             min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
+  }
+  
+  #run PCA by sample
+  pca.res <- lapply(obj.list, function(this) {
+    
+    mat <- GeneNMF:::getDataMatrix(obj=this, assay=assay, slot=slot,
+                                   hvg=hvg, do_centering=center,
+                                   do_scaling=scale, non_negative = FALSE)
+    
+    pca <- prcomp_irlba(t(as.matrix(mat)), center=F, scale.=F, n=k)
+    rownames(pca$rotation) <- rownames(mat)
+    
+    nn_pca <- nonNegativePCA(pca, k=k) 
+    
+    npca.obj <- list(w = nn_pca, h = NULL)
+    npca.obj
+  })
+  names(pca.res) <- paste0(names(pca.res), ".k", k)
+  
+  return(pca.res)
+}  
+
 
 #' Get list of genes for each NMF program
 #'
@@ -100,18 +181,32 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #' 
 #' @importFrom NMF extractFeatures
 #' @export  
-getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
+getNMFgenes <- function(nmf.res, method=0.5, quantile=0.90, max.genes=200) {
   
   nmf.genes <- lapply(nmf.res, function(model) {
     
-    emb <- model$h
     load <- model$w
     
-    m <- NMF::extractFeatures(load, method=method)
-    m <- lapply(m, function(x){
-      genes <- rownames(load)[x]
-      head(genes, min(length(genes), max.genes))
+    wl <- weightedLoad(load)
+    q <- quantile(wl, quantile)
+    
+    m <- apply(wl, 2, function(x) {
+      sort(x[x>=q], decreasing = T)
     })
+    
+    m <- lapply(m, function(x){
+      head(x, min(length(x), max.genes))
+    })
+    
+#    m <- NMF::extractFeatures(load, method=method)
+#    m <- lapply(m, function(x){
+#      genes <- rownames(load)[x]
+#      head(genes, min(length(genes), max.genes))
+#    })
+    
+    #drop empty programs
+    isna <- lapply(m, function(x) {all(is.na(x))})
+    m <- m[!as.numeric(isna)]
     
     names(m) <- paste0("p",seq(1,length(m)))
     m
@@ -129,6 +224,7 @@ getNMFgenes <- function(nmf.res, method=0.5, max.genes=200) {
 #' @param nmf.res A list of NMF models obtained from \code{\link{multiNMF}}
 #' @param method Parameter passed to \code{\link[NMF]{extractFeatures}} to 
 #'     obtain top genes for each program
+#' @param metric Metric to calculate pairwise similarity between programs     
 #' @param max.genes Max number of genes for each programs
 #' @param hclust.method Method to build similarity tree between individual programs
 #' @param nprograms Total number of meta-programs
@@ -161,23 +257,21 @@ getMetaPrograms <- function(nmf.res, method=0.5,
                             hclust.method="ward.D2",
                             nprograms=10,
                             min.confidence=0.2,
+                            metric = c("jaccard","cosine"),
                             remove.empty=TRUE) {
   
+  metric = metric[1]
+  
   nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
-  
-  nprogs <- length(nmf.genes)
-  J <- matrix(data=0, ncol=nprogs, nrow = nprogs)
-  colnames(J) <- names(nmf.genes)
-  rownames(J) <- names(nmf.genes)
-  
-  for (i in 1:nprogs) {
-    for (j in 1:nprogs) {
-      J[i,j] <- jaccardIndex(nmf.genes[[i]], nmf.genes[[j]])
-    }  
+  if (metric == "jaccard") {
+    J <- jaccardSimilarity(nmf.genes)
+  } else if (metric == "cosine") {
+    J <- cosineSimilarity(nmf.genes)   
+  } else {
+    stop("Unknown distance metric.")
   }
   Jdist <- as.dist(1-J)
-  
-  #Cluster programs by gene overlap (J index)
+  #Cluster programs by gene overlap
   tree <- hclust(Jdist, method=hclust.method)
   cl_members <- cutree(tree, k = nprograms)
   
@@ -369,7 +463,8 @@ runGSEA <- function(genes, universe=NULL,
 #' @param k Number of components for low-dim representation
 #' @param hvg Which genes to use for the reduction
 #' @param new.reduction Name of new dimensionality reduction
-#' @param do_centering Whether to center the data matrix
+#' @param center Whether to center the data matrix
+#' @param scale Whether to scale the data matrix
 #' @param L1 L1 regularization term for NMF
 #' @param seed Random seed
 #' @return Returns a Seurat object with a new dimensionality reduction (NMF)
@@ -382,7 +477,7 @@ runGSEA <- function(genes, universe=NULL,
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
                    L1=c(0,0), hvg=NULL,
-                   do_centering=TRUE) {
+                   center=TRUE, scale=FALSE) {
   
   
   set.seed(seed)
@@ -395,7 +490,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   }
   
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
-                    hvg=hvg, do_centering=do_centering)
+                    hvg=hvg, do_centering=center, do_scaling=scale)
   
   model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed)
   
@@ -427,6 +522,8 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' @param hvg List of variable genes to subset the matrix. If NULL, uses
 #'     all genes
 #' @param do_centering Whether to center the data matrix
+#' @param do_scaling Whether to scale the data matrix
+#' @param non_negative Enforce non-negative values for NMF
 #'     
 #' @return Returns a sparse data matrix (cells per genes), subset 
 #' according to the given parameters
@@ -437,16 +534,23 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' 
 #' @importFrom Seurat GetAssayData
 #' @export  
-getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL, do_centering=TRUE) {
+getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
+                          do_centering=TRUE, do_scaling=FALSE,
+                          non_negative=TRUE) {
   
   mat <- GetAssayData(obj, assay=assay, layer=slot)
   
   #subset on HVG
   if (!is.null(hvg)) mat <- mat[hvg,]
   
-  if (do_centering) {
-    mat <- centerData(mat)
+  #Center and rescale
+  mat <- scale(mat, center=do_centering, scale=do_scaling)
+  if (non_negative) {
+    mat[mat<0] <- 0
   }
+#  if (do_centering) {
+#    mat <- centerData(mat)
+#  }
   return(mat)
 }
 

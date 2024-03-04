@@ -13,7 +13,8 @@ runNMF(
   seed = 123,
   L1 = c(0, 0),
   hvg = NULL,
-  do_centering = TRUE
+  center = TRUE,
+  scale = FALSE
 )
 }
 \arguments{
@@ -33,7 +34,9 @@ runNMF(
 
 \item{hvg}{Which genes to use for the reduction}
 
-\item{do_centering}{Whether to center the data matrix}
+\item{center}{Whether to center the data matrix}
+
+\item{scale}{Whether to scale the data matrix}
 }
 \value{
 Returns a Seurat object with a new dimensionality reduction (NMF)
