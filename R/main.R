@@ -189,12 +189,12 @@ getNMFgenes <- function(nmf.res,
   nmf.genes <- lapply(nmf.res, function(model) {
     
     load <- model$w
-    wl <- weightedLoad(load, w=specificity.weight)
+    wl <- GeneNMF:::weightedLoad(load, w=specificity.weight)
     
     gene.pass <- apply(wl, 2, function(x) {
       x.sorted <- sort(x, decreasing = T)
       cs <- cumsum(x.sorted)
-      norm.cs <- cs/sum(cs)
+      norm.cs <- normVector(cs)
       norm.cs <- norm.cs/max(norm.cs)
       npass <- length(norm.cs[norm.cs<weight.explained])
       npass

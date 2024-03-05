@@ -174,9 +174,18 @@ nonNegativePCA <- function(pca, k) {
 
 #Weighting factor matrix by feature specificity
 weightedLoad <- function(matrix, w) {
-  spec <- apply(matrix, 1, function(x){max(x/sum(x))})
+  rownorm <- apply(matrix, 1, normVector)
+  spec <- apply(rownorm, 2, max)
   spec.w <- spec^w
   matrix <- matrix * spec.w
   #renormalize
-  apply(matrix, 2, function(x){x/sum(x)})
+  apply(matrix, 2, normVector)
+}
+
+normVector <- function(vector) {
+  s <- sum(vector)
+  if (s>0) {
+    vector <- vector/s
+  }
+  return(vector)
 }
