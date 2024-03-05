@@ -6,32 +6,38 @@
 \usage{
 getMetaPrograms(
   nmf.res,
-  method = 0.5,
-  max.genes = 200,
-  hclust.method = "ward.D2",
   nprograms = 10,
-  min.confidence = 0.2,
+  specificity.weight = 1,
+  weight.explained = 0.5,
+  max.genes = 200,
   metric = c("jaccard", "cosine"),
+  hclust.method = "ward.D2",
+  min.confidence = 0.2,
   remove.empty = TRUE
 )
 }
 \arguments{
 \item{nmf.res}{A list of NMF models obtained from \code{\link{multiNMF}}}
 
-\item{method}{Parameter passed to \code{\link[NMF]{extractFeatures}} to 
-obtain top genes for each program}
+\item{nprograms}{Total number of meta-programs}
+
+\item{specificity.weight}{A parameter controlling how specific gene
+should be for each program. `specificity.weight=0` no constraint on
+specificity, and positive values impose increasing specificity.}
+
+\item{weight.explained}{Fraction of NMF weights explained by selected
+genes. For example if weight.explained=0.5, all genes that together
+account for 50\% of NMF weights are used to return program signatures.}
 
 \item{max.genes}{Max number of genes for each programs}
 
-\item{hclust.method}{Method to build similarity tree between individual programs}
+\item{metric}{Metric to calculate pairwise similarity between programs}
 
-\item{nprograms}{Total number of meta-programs}
+\item{hclust.method}{Method to build similarity tree between individual programs}
 
 \item{min.confidence}{Percentage of programs in which a gene is seen 
 (out of programs in the corresponding program tree branch/cluster), to be 
 retained in the consensus metaprograms}
-
-\item{metric}{Metric to calculate pairwise similarity between programs}
 
 \item{remove.empty}{Whether to remove meta-programs with no genes above 
 confidence threshold}

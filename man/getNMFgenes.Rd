@@ -4,16 +4,23 @@
 \alias{getNMFgenes}
 \title{Get list of genes for each NMF program}
 \usage{
-getNMFgenes(nmf.res, method = 0.5, quantile = 0.9, max.genes = 200)
+getNMFgenes(
+  nmf.res,
+  specificity.weight = 1,
+  weight.explained = 0.5,
+  max.genes = 200
+)
 }
 \arguments{
 \item{nmf.res}{A list of NMF models obtained using \code{multiNMF()}}
 
-\item{method}{Parameter passed to \code{\link[NMF]{extractFeatures}} to
-obtain top genes for each program. When 'method' is a number between 0 
-and 1, it indicates
-the minimum relative basis contribution above which the feature is
-selected, i.e. how specific is a gene for a given program.}
+\item{specificity.weight}{A parameter controlling how specific gene
+should be for each program. `specificity.weight=0` no constraint on
+specificity, and positive values impose increasing specificity.}
+
+\item{weight.explained}{Fraction of NMF weights explained by selected
+genes. For example if weight.explained=0.5, all genes that together
+account for 50\% of NMF weights are used to return program signatures.}
 
 \item{max.genes}{Max number of genes for each program}
 }

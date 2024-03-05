@@ -163,11 +163,12 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
 #' Run it over a list of NMF models obtained using \code{multiNMF()}
 #'
 #' @param nmf.res A list of NMF models obtained using \code{multiNMF()}
-#' @param method Parameter passed to \code{\link[NMF]{extractFeatures}} to
-#'     obtain top genes for each program. When 'method' is a number between 0 
-#'     and 1, it indicates
-#'     the minimum relative basis contribution above which the feature is
-#'     selected, i.e. how specific is a gene for a given program.
+#' @param specificity.weight A parameter controlling how specific gene
+#'     should be for each program. `specificity.weight=0` no constraint on
+#'     specificity, and positive values impose increasing specificity.
+#' @param weight.explained Fraction of NMF weights explained by selected
+#'     genes. For example if weight.explained=0.5, all genes that together
+#'     account for 50\% of NMF weights are used to return program signatures.
 #' @param max.genes Max number of genes for each program 
 #'     
 #' @return Returns a list of top genes for each gene program found
@@ -179,30 +180,30 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_genes <- getNMFgenes(geneNMF_programs)
 #' 
-#' @importFrom NMF extractFeatures
-#' @export  
-getNMFgenes <- function(nmf.res, method=0.5, quantile=0.90, max.genes=200) {
+#' @export
+  
+getNMFgenes <- function(nmf.res,
+                        specificity.weight=1,
+                        weight.explained=0.5, max.genes=200) {
   
   nmf.genes <- lapply(nmf.res, function(model) {
     
     load <- model$w
+    wl <- weightedLoad(load, w=specificity.weight)
     
-    wl <- weightedLoad(load)
-    q <- quantile(wl, quantile)
-    
-    m <- apply(wl, 2, function(x) {
-      sort(x[x>=q], decreasing = T)
+    gene.pass <- apply(wl, 2, function(x) {
+      x.sorted <- sort(x, decreasing = T)
+      cs <- cumsum(x.sorted)
+      norm.cs <- cs/sum(cs)
+      norm.cs <- norm.cs/max(norm.cs)
+      npass <- length(norm.cs[norm.cs<weight.explained])
+      npass
     })
     
-    m <- lapply(m, function(x){
-      head(x, min(length(x), max.genes))
+    m <- lapply(seq(ncol(wl)), function(i) {
+      ss <- sort(wl[,i], decreasing = T)
+      head(ss, min(gene.pass[i], max.genes))
     })
-    
-#    m <- NMF::extractFeatures(load, method=method)
-#    m <- lapply(m, function(x){
-#      genes <- rownames(load)[x]
-#      head(genes, min(length(genes), max.genes))
-#    })
     
     #drop empty programs
     isna <- lapply(m, function(x) {all(is.na(x))})
@@ -215,6 +216,7 @@ getNMFgenes <- function(nmf.res, method=0.5, quantile=0.90, max.genes=200) {
   nmf.genes <- unlist(nmf.genes, recursive = FALSE)
   return(nmf.genes)
 }
+
 #' Extract consensus gene programs (meta-programs)
 #'
 #' Run it over a list of NMF models obtained using \code{\link{multiNMF}}; it will 
@@ -222,12 +224,16 @@ getNMFgenes <- function(nmf.res, method=0.5, quantile=0.90, max.genes=200) {
 #' and values of k.
 #'
 #' @param nmf.res A list of NMF models obtained from \code{\link{multiNMF}}
-#' @param method Parameter passed to \code{\link[NMF]{extractFeatures}} to 
-#'     obtain top genes for each program
+#' @param nprograms Total number of meta-programs
 #' @param metric Metric to calculate pairwise similarity between programs     
 #' @param max.genes Max number of genes for each programs
 #' @param hclust.method Method to build similarity tree between individual programs
-#' @param nprograms Total number of meta-programs
+#' @param specificity.weight A parameter controlling how specific gene
+#'     should be for each program. `specificity.weight=0` no constraint on
+#'     specificity, and positive values impose increasing specificity.
+#' @param weight.explained Fraction of NMF weights explained by selected
+#'     genes. For example if weight.explained=0.5, all genes that together
+#'     account for 50\% of NMF weights are used to return program signatures.
 #' @param min.confidence Percentage of programs in which a gene is seen 
 #'      (out of programs in the corresponding program tree branch/cluster), to be 
 #'      retained in the consensus metaprograms
@@ -248,22 +254,26 @@ getNMFgenes <- function(nmf.res, method=0.5, quantile=0.90, max.genes=200) {
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 #' 
-#' @importFrom NMF extractFeatures
 #' @importFrom stats cutree dist
 #' @importFrom cluster silhouette
 #' @importFrom lsa cosine
 #' @export  
-getMetaPrograms <- function(nmf.res, method=0.5,
-                            max.genes=200,
-                            hclust.method="ward.D2",
+getMetaPrograms <- function(nmf.res,
                             nprograms=10,
-                            min.confidence=0.2,
+                            specificity.weight=1,
+                            weight.explained=0.5,
+                            max.genes=200,
                             metric = c("jaccard","cosine"),
+                            hclust.method="ward.D2",
+                            min.confidence=0.2,
                             remove.empty=TRUE) {
   
   metric = metric[1]
   
-  nmf.genes <- getNMFgenes(nmf.res=nmf.res, method=method, max.genes=max.genes) 
+  nmf.genes <- getNMFgenes(nmf.res=nmf.res,
+                           specificity.weight=specificity.weight,
+                           weight.explained=weight.explained,
+                           max.genes=max.genes) 
   if (metric == "jaccard") {
     J <- jaccardSimilarity(nmf.genes)
   } else if (metric == "cosine") {

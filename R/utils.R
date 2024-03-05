@@ -82,17 +82,15 @@ get_metaprogram_consensus <- function(nmf.genes=NULL,
     gene.vectors <- nmf.genes[which.samples]
     gene.table <- geneList2table(gene.vectors)
     
-    score.avg <- sort(apply(gene.table, 1, mean), decreasing=T)
-    head(names(score.avg), min(length(score.avg), max.genes))
+    genes.avg <- apply(gene.table, 1, mean)
+    genes.confidence <- apply(gene.table, 1, function(x){sum(x>0)/ length(x)})
+    
+    genes.avg <- genes.avg[genes.confidence > min.confidence]
+    genes.avg <- sort(genes.avg, decreasing = T)
+    
+    head(names(genes.avg), min(length(genes.avg), max.genes))
   })
   
-#  markers.consensus <- lapply(seq(1, nprograms), function(c) {
-#    which.samples <- names(cl_members)[cl_members == c]
-#    genes <- nmf.genes[which.samples]
-#    genes.confidence <- sort(table(unlist(genes)), decreasing = T)/(length(which.samples))
-#    genes.unique <- names(genes.confidence)[genes.confidence > min.confidence]
-#    head(genes.unique, min(length(genes.unique), max.genes))
-#  })
   names(markers.consensus) <- paste0("MetaProgram",seq(1,nprograms))
   return(markers.consensus)
 }
@@ -175,7 +173,10 @@ nonNegativePCA <- function(pca, k) {
 } 
 
 #Weighting factor matrix by feature specificity
-weightedLoad <- function(matrix) {
+weightedLoad <- function(matrix, w) {
   spec <- apply(matrix, 1, function(x){max(x/sum(x))})
-  matrix * spec
+  spec.w <- spec^w
+  matrix <- matrix * spec.w
+  #renormalize
+  apply(matrix, 2, function(x){x/sum(x)})
 }
