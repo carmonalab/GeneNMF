@@ -1,5 +1,7 @@
 # GeneNMF: unsupervised discovery of gene programs in single-cell data
 
+[![](https://cranlogs.r-pkg.org/badges/GeneNMF)](https://cran.r-project.org/package=GeneNMF)
+
 <p align="center">
   <img height="80" src="inst/RSticker_GeneNMF.png">
 </p>
