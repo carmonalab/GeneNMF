@@ -31,5 +31,5 @@ sampleObj <- runNMF(sampleObj, k=5)
 ## GeneNMF demo
 Find a demo of the functionalities of GeneNMF in the following tutorial: [HTML](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html) and [repository](https://github.com/carmonalab/GeneNMF.demo).
 
-## References
-Coming soon!
+## Citation
+**Wounding triggers invasive progression in human basal cell carcinoma**. Laura Yerly, Massimo Andreatta, Josep Garnica, Jeremy Di Domizio, Michel Gilliet, Santiago J Carmona, Francois Kuonen. [BioRxiv 2024 DOI 10.1101/2024.05.31.596823](https://doi.org/10.1101/2024.05.31.596823)
