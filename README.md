@@ -12,24 +12,36 @@ Non-negative matrix factorization is a method for the analysis of high dimension
 
 ## Installation
 Install release version from [CRAN](https://CRAN.R-project.org/package=GeneNMF):
-```r
-install.package("GeneNMF")
+```{r}
+install.packages("GeneNMF")
 ```
-For the development version of GeneNMF, install from GitHub:
-```r
+Or for the latest version, install from GitHub:
+```{r}
 library(remotes)
 remotes::install_github("carmonalab/GeneNMF")
 ```
 
 ## Test your installation
-```r
+```{r}
 library(GeneNMF)
 data(sampleObj)
 sampleObj <- runNMF(sampleObj, k=5)
 ```
 
+## Meta programs discovery using default parameters
+
+Perform NMF over a list of Seurat objects and for multiple values of k (number of NMF factors) to extract gene programs
+```{r}
+sampleObj.list <- Seurat::SplitObject(sampleObj, split.by = "donor")
+geneNMF.programs <- multiNMF(sampleObj.list, k=4:9, nfeatures = 2000) # here k from 4 to 9
+```
+Cluster gene programs from multiple samples and k's into meta-programs (MPs), i.e. consensus programs that are robustly identified across NMF runs. Compute MP metrics and most influencial MP genes.
+```{r}
+geneNMF.metaprograms <- getMetaPrograms(geneNMF.programs, nprograms=5) # here we get 5 MPs
+```
+
 ## GeneNMF demo
-Find a demo of the functionalities of GeneNMF in the following tutorial: [HTML](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html) and [repository](https://github.com/carmonalab/GeneNMF.demo).
+Find a demo of the functionalities of GeneNMF and more explanations in the following tutorial: [HTML](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html) and [repository](https://github.com/carmonalab/GeneNMF.demo).
 
 ## Citation
 **Wounding triggers invasive progression in human basal cell carcinoma**. Laura Yerly, Massimo Andreatta, Josep Garnica, Jeremy Di Domizio, Michel Gilliet, Santiago J Carmona, Francois Kuonen. [bioRxiv 2024 10.1101/2024.05.31.596823](https://doi.org/10.1101/2024.05.31.596823)
