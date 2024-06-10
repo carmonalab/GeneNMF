@@ -10,7 +10,7 @@
 
 Non-negative matrix factorization is a method for the analysis of high dimensional data that allows extracting sparse and meaningful features from a set of non-negative data vectors. It is well suited for decomposing scRNA-seq data, effectively reducing large complex matrices ($10^4$ of genes times $10^5$ of cells) into a few interpretable gene programs. It has been especially used to extract recurrent gene programs in cancer cells (see e.g. [Barkely et al. (2022)](https://www.nature.com/articles/s41588-022-01141-9) and [Gavish et al. (2023)](https://www.nature.com/articles/s41586-023-06130-4)), which are otherwise difficult to integrate and analyse jointly.
 
-**GeneNMF** is a package that implements methods for matrix factorization and gene program discovery for single-cell omics data. It can be applied directly on Seurat objects to reduce the dimensionality of the data and to detect robust gene programs across multiple samples. For fast NMF calculation, GeneNMF uses [RcppML](https://github.com/zdebruine/RcppML) (see [DeBruine et al. 2024](https://www.biorxiv.org/content/10.1101/2021.09.01.458620v2.full)).
+**GeneNMF** is a package that implements methods for matrix factorization and gene program discovery for single-cell omics data. It can be applied directly on Seurat objects to reduce the dimensionality of the data and to detect robust gene programs across multiple samples. For fast NMF calculation, GeneNMF relies on [RcppML](https://github.com/zdebruine/RcppML) (see [DeBruine et al. 2024](https://www.biorxiv.org/content/10.1101/2021.09.01.458620v2.full)).
 
 ## Installation
 Install release version from [CRAN](https://CRAN.R-project.org/package=GeneNMF):
@@ -48,5 +48,6 @@ Find a demo of the functionalities of GeneNMF and more explanations in the follo
 ## Citation
 
 If you used GeneNMF in your work, please cite:
+
 **Wounding triggers invasive progression in human basal cell carcinoma**. Laura Yerly, Massimo Andreatta, Josep Garnica, Jeremy Di Domizio, Michel Gilliet, Santiago J Carmona, Francois Kuonen. [bioRxiv 2024 10.1101/2024.05.31.596823](https://doi.org/10.1101/2024.05.31.596823)
 
