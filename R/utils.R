@@ -20,15 +20,8 @@ jaccardSimilarity <- function(gene.vectors) {
 
 #Calculate cosine similarity
 cosineSimilarity <- function(gene.vectors) {
-  
-  names <- names(gene.vectors)
-  gene.vectors <- lapply(names, function(n) {
-    g <- gene.vectors[[n]]
-    colnames(g) <- paste(n,seq(1,ncol(g)),sep=".p")
-    g
-  })
-  gene.table <- Reduce(f=cbind, x=gene.vectors)
-  cosine.matrix <- lsa::cosine(as.matrix(gene.table))
+  gene.table <- geneList2table(gene.vectors)
+  cosine.matrix <- cosine(as.matrix(gene.table))
   return(cosine.matrix)
 }
 
@@ -39,7 +32,7 @@ geneList2table <- function(gene.vectors) {
     zeros.names <- setdiff(allgenes, names(x))
     zeros <- rep(0, length(zeros.names))
     names(zeros) <- zeros.names
-    x = c(x, zeros)
+    x <- c(x, zeros)
     x[allgenes]
   })
   return(as.data.frame(gene.table))
@@ -86,7 +79,7 @@ get_metaprogram_consensus <- function(nmf.genes=NULL,
     genes.avg <- genes.avg[genes.confidence > min.confidence]
     genes.avg <- sort(genes.avg, decreasing = T)
     
-    head(names(genes.avg), min(length(genes.avg), max.genes))
+    head(genes.avg, min(length(genes.avg), max.genes))
   })
   
   names(markers.consensus) <- paste0("MetaProgram",seq(1,nprograms))

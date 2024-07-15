@@ -272,18 +272,14 @@ getMetaPrograms <- function(nmf.res,
   
   metric = metric[1]
   
-  nmf.res.weighted <- lapply(nmf.res, function(model) {
-    GeneNMF:::weightedLoad(model$w, w=specificity.weight)
-  })
-  
-  nmf.genes <- getNMFgenes(nmf.res=nmf.res.weighted,
-                           specificity.weight=NULL,
+  nmf.genes <- getNMFgenes(nmf.res=nmf.res,
+                           specificity.weight=specificity.weight,
                            weight.explained=weight.explained,
                            max.genes=max.genes) 
   if (metric == "jaccard") {
     J <- jaccardSimilarity(nmf.genes)
   } else if (metric == "cosine") {
-    J <- cosineSimilarity(nmf.res.weighted)   
+    J <- cosineSimilarity(nmf.genes)   
   } else {
     stop("Unknown distance metric.")
   }
@@ -293,13 +289,13 @@ getMetaPrograms <- function(nmf.res,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- GeneNMF:::get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  max.genes=max.genes,
                                                  cl_members=cl_members)
   #Get meta-program metrics
-  metaprograms.metrics <- GeneNMF:::get_metaprogram_metrics(J=J, Jdist=Jdist,
+  metaprograms.metrics <- get_metaprogram_metrics(J=J, Jdist=Jdist,
                                                   markers.consensus=markers.consensus,
                                                   cl_members=cl_members)
   
@@ -332,7 +328,8 @@ getMetaPrograms <- function(nmf.res,
   names(cl_members.new) <- names(cl_members)
   
   output.object <- list()
-  output.object[["metaprograms.genes"]] <- markers.consensus
+  output.object[["metaprograms.genes"]] <- names(markers.consensus)
+  output.object[["metaprograms.genes.weights"]] <- markers.consensus
   output.object[["metaprograms.metrics"]] <- metaprograms.metrics
   output.object[["programs.similarity"]] <- J
   output.object[["programs.tree"]] <- tree
