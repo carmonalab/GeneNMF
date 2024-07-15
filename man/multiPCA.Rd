@@ -14,7 +14,7 @@ multiPCA(
   min.exp = 0.01,
   max.exp = 3,
   min.cells.per.sample = 10,
-  center = TRUE,
+  center = FALSE,
   scale = TRUE,
   hvg.blocklist = NULL,
   seed = 123

@@ -14,8 +14,8 @@ multiNMF(
   L1 = c(0, 0),
   min.exp = 0.01,
   max.exp = 3,
-  center = TRUE,
-  scale = FALSE,
+  center = FALSE,
+  scale = TRUE,
   min.cells.per.sample = 10,
   hvg.blocklist = NULL,
   seed = 123

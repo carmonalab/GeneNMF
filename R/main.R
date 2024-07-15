@@ -40,7 +40,7 @@
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
                    min.exp=0.01, max.exp=3.0,
-                   center=TRUE, scale=FALSE,
+                   center=FALSE, scale=TRUE,
                    min.cells.per.sample = 10,
                    hvg.blocklist=NULL, seed=123) {
   
@@ -123,7 +123,7 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
                      hvg=NULL, nfeatures = 500,
                      min.exp=0.01, max.exp=3.0,
                      min.cells.per.sample = 10,
-                     center=TRUE, scale=TRUE,
+                     center=FALSE, scale=TRUE,
                      hvg.blocklist=NULL, seed=123) {
   
   set.seed(seed)
