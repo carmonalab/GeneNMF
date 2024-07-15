@@ -273,7 +273,7 @@ getMetaPrograms <- function(nmf.res,
   metric = metric[1]
   
   nmf.res.weighted <- lapply(nmf.res, function(model) {
-    weightedLoad(model$w, w=specificity.weight)
+    GeneNMF:::weightedLoad(model$w, w=specificity.weight)
   })
   
   nmf.genes <- getNMFgenes(nmf.res=nmf.res.weighted,
@@ -293,13 +293,13 @@ getMetaPrograms <- function(nmf.res,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- GeneNMF:::get_metaprogram_consensus(nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  max.genes=max.genes,
                                                  cl_members=cl_members)
   #Get meta-program metrics
-  metaprograms.metrics <- get_metaprogram_metrics(J=J, Jdist=Jdist,
+  metaprograms.metrics <- GeneNMF:::get_metaprogram_metrics(J=J, Jdist=Jdist,
                                                   markers.consensus=markers.consensus,
                                                   cl_members=cl_members)
   

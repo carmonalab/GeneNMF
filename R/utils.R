@@ -24,7 +24,7 @@ cosineSimilarity <- function(gene.vectors) {
   names <- names(gene.vectors)
   gene.vectors <- lapply(names, function(n) {
     g <- gene.vectors[[n]]
-    colnames(g) <- paste(n,seq(1,ncol(g)),sep=".")
+    colnames(g) <- paste(n,seq(1,ncol(g)),sep=".p")
     g
   })
   gene.table <- Reduce(f=cbind, x=gene.vectors)
