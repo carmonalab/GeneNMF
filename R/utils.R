@@ -20,8 +20,15 @@ jaccardSimilarity <- function(gene.vectors) {
 
 #Calculate cosine similarity
 cosineSimilarity <- function(gene.vectors) {
-  gene.table <- geneList2table(gene.vectors)
-  cosine.matrix <- cosine(as.matrix(gene.table))
+  
+  names <- names(gene.vectors)
+  gene.vectors <- lapply(names, function(n) {
+    g <- gene.vectors[[n]]
+    colnames(g) <- paste(n,seq(1,ncol(g)),sep=".")
+    g
+  })
+  gene.table <- Reduce(f=cbind, x=gene.vectors)
+  cosine.matrix <- lsa::cosine(as.matrix(gene.table))
   return(cosine.matrix)
 }
 
@@ -36,16 +43,6 @@ geneList2table <- function(gene.vectors) {
     x[allgenes]
   })
   return(as.data.frame(gene.table))
-}
-
-#Center matrix
-centerData <- function(data, non_negative=T) {
-  mean <- apply(data, 1, mean)
-  data <- data - mean
-  if (non_negative) {
-    data[data<0] <- 0
-  }
-  return(data)
 }
 
 #Calculate entropy
@@ -75,6 +72,7 @@ get_metaprogram_consensus <- function(nmf.genes=NULL,
                                       nprograms=10,
                                       min.confidence=0,
                                       max.genes=200,
+                                      comb.function=median,
                                       cl_members=NULL) {
   
   markers.consensus <- lapply(seq(1, nprograms), function(c) {
@@ -82,7 +80,7 @@ get_metaprogram_consensus <- function(nmf.genes=NULL,
     gene.vectors <- nmf.genes[which.samples]
     gene.table <- geneList2table(gene.vectors)
     
-    genes.avg <- apply(gene.table, 1, mean)
+    genes.avg <- apply(gene.table, 1, comb.function)
     genes.confidence <- apply(gene.table, 1, function(x){sum(x>0)/ length(x)})
     
     genes.avg <- genes.avg[genes.confidence > min.confidence]
@@ -116,8 +114,8 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   sil.widths <- summary(sil)$clus.avg.widths
   names(sil.widths) <- paste0("MetaProgram",seq(1,nprograms))
   
-  #calculate MP internal average Jaccard similarity
-  clusterJaccard <- rep(NA,nprograms)
+  #calculate MP internal average similarity
+  clusterSim <- rep(NA,nprograms)
   for(i in seq_len(nprograms)){
     selectMP <- which(cl_members==i)
     if (length(selectMP) > 1) { #needs at least two values
@@ -126,7 +124,7 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
     } else {
       value <- 0
     }
-    clusterJaccard[i] <- value
+    clusterSim[i] <- value
   }
   #number of genes in each meta-program
   metaprograms.length <- unlist(lapply(markers.consensus,length))
@@ -137,7 +135,7 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   metaprograms.metrics <- data.frame(
     sampleCoverage=unlist(sample.coverage),
     silhouette=sil.widths,
-    meanJaccard=clusterJaccard,
+    meanSimilarity=clusterSim,
     numberGenes=metaprograms.length,
     numberPrograms=metaprograms.size)
   

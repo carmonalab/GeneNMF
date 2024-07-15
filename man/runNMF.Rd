@@ -13,8 +13,8 @@ runNMF(
   seed = 123,
   L1 = c(0, 0),
   hvg = NULL,
-  center = TRUE,
-  scale = FALSE
+  center = FALSE,
+  scale = TRUE
 )
 }
 \arguments{

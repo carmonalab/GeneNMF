@@ -9,8 +9,8 @@ getDataMatrix(
   assay = "RNA",
   slot = "data",
   hvg = NULL,
-  do_centering = TRUE,
-  do_scaling = FALSE,
+  do_centering = FALSE,
+  do_scaling = TRUE,
   non_negative = TRUE
 )
 }

@@ -7,7 +7,7 @@
 getMetaPrograms(
   nmf.res,
   nprograms = 10,
-  specificity.weight = 1,
+  specificity.weight = 5,
   weight.explained = 0.5,
   max.genes = 200,
   metric = c("jaccard", "cosine"),
@@ -46,9 +46,9 @@ confidence threshold}
 Returns a list with i) 'metaprograms.genes' top genes for each 
     meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs 
     statistics: a) freq. of samples where the MP is present, b) average 
-    silhouette width, c) mean Jaccard similarity, d) number of genes in MP, 
-    e) number of gene programs in MP; iii) 'programs.jaccard': matrix of 
-    Jaccard similarities between meta-programs; iv) 'programs.tree': 
+    silhouette width, c) mean similarity (cosine or Jaccard), d) number of genes in MP, 
+    e) number of gene programs in MP; iii) 'programs.similarity': matrix of 
+    similarities (Jaccard or cosine) between meta-programs; iv) 'programs.tree': 
     hierarchical clustering of meta-programs (hclust tree); v) 
     'programs.clusters': meta-program identity for each program
 }

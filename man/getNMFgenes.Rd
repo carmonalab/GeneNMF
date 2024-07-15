@@ -6,7 +6,7 @@
 \usage{
 getNMFgenes(
   nmf.res,
-  specificity.weight = 1,
+  specificity.weight = 5,
   weight.explained = 0.5,
   max.genes = 200
 )
