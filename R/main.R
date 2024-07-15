@@ -327,6 +327,9 @@ getMetaPrograms <- function(nmf.res,
 
   names(cl_members.new) <- names(cl_members)
   
+  #weights of individual genes in each MP
+  markers.consensus <- lapply(markers.consensus, function(m){m/sum(m)})
+  
   output.object <- list()
   output.object[["metaprograms.genes"]] <- names(markers.consensus)
   output.object[["metaprograms.genes.weights"]] <- markers.consensus
