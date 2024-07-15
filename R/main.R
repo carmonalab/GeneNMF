@@ -289,7 +289,7 @@ getMetaPrograms <- function(nmf.res,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- GeneNMF:::get_metaprogram_consensus(nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  max.genes=max.genes,

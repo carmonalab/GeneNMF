@@ -65,7 +65,7 @@ get_metaprogram_consensus <- function(nmf.genes=NULL,
                                       nprograms=10,
                                       min.confidence=0,
                                       max.genes=200,
-                                      comb.function=median,
+                                      comb.function=mean,
                                       cl_members=NULL) {
   
   markers.consensus <- lapply(seq(1, nprograms), function(c) {
