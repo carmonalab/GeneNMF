@@ -195,7 +195,7 @@ getNMFgenes <- function(nmf.res,
   nmf.genes <- lapply(nmf.res, function(model) {
     
     gene.pass <- apply(model, 2, function(x) {
-      weightCumul(x)
+      weightCumul(x, weight.explained = weight.explained)
     })
     
     m <- lapply(gene.pass, function(g) {

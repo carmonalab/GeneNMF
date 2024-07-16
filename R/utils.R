@@ -60,8 +60,10 @@ findHVG <- function(obj.list, nfeatures=2000,
 
 #Calculate metrics for meta-programs
 get_metaprogram_consensus <- function(nmf.wgt,
+                                      nmf.genes,
                                       nprograms=10,
                                       min.confidence=0,
+                                      weight.explained=0.5,
                                       max.genes=200,
                                       cl_members=NULL) {
   
@@ -76,7 +78,7 @@ get_metaprogram_consensus <- function(nmf.wgt,
       mean(x.out)
     })
     genes.avg <- sort(genes.avg, decreasing = T)
-    genes.pass <- weightCumul(genes.avg)
+    genes.pass <- weightCumul(genes.avg, weight.explained=weight.explained)
     
     
     this <- nmf.genes[which.samples]
