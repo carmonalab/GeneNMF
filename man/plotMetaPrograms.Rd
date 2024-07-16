@@ -6,7 +6,7 @@
 \usage{
 plotMetaPrograms(
   mp.res,
-  similarity.cutoff = c(0, 0.8),
+  similarity.cutoff = c(0, 1),
   scale = "none",
   palette = viridis(100, option = "A", direction = -1),
   annotation_colors = NULL,

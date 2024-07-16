@@ -184,34 +184,29 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
   
 getNMFgenes <- function(nmf.res,
                         specificity.weight=5,
-                        weight.explained=0.5, max.genes=200) {
+                        weight.explained=0.5,
+                        max.genes=200) {
+  
+  
+  if (!is.null(specificity.weight)) {
+    nmf.res <- weightedLoadings(nmf.res, specificity.weight=specificity.weight)
+  }
   
   nmf.genes <- lapply(nmf.res, function(model) {
     
-    if (is.null(specificity.weight)) {
-      wl <- model
-    } else {
-      wl <- weightedLoad(model$w, w=specificity.weight)
-    }
-    gene.pass <- apply(wl, 2, function(x) {
-      x.sorted <- sort(x, decreasing = T)
-      cs <- cumsum(x.sorted)
-      norm.cs <- normVector(cs)
-      norm.cs <- norm.cs/max(norm.cs)
-      npass <- length(norm.cs[norm.cs<weight.explained])
-      npass
+    gene.pass <- apply(model, 2, function(x) {
+      weightCumul(x)
     })
     
-    m <- lapply(seq(ncol(wl)), function(i) {
-      ss <- sort(wl[,i], decreasing = T)
-      head(ss, min(gene.pass[i], max.genes))
+    m <- lapply(gene.pass, function(g) {
+      head(g, min(length(g), max.genes))
     })
     
     #drop empty programs
     isna <- lapply(m, function(x) {all(is.na(x))})
     m <- m[!as.numeric(isna)]
     
-    names(m) <- paste0("p",seq(1,length(m)))
+    names(m) <- seq(1,length(m))
     m
   })
   
@@ -265,21 +260,25 @@ getMetaPrograms <- function(nmf.res,
                             specificity.weight=5,
                             weight.explained=0.5,
                             max.genes=200,
-                            metric = c("jaccard","cosine"),
+                            metric = c("cosine","jaccard"),
                             hclust.method="ward.D2",
                             min.confidence=0.2,
                             remove.empty=TRUE) {
   
   metric = metric[1]
   
-  nmf.genes <- getNMFgenes(nmf.res=nmf.res,
-                           specificity.weight=specificity.weight,
+  nmf.wgt <- weightedLoadings(nmf.res=nmf.res,
+                           specificity.weight=specificity.weight)
+  
+  nmf.genes <- getNMFgenes(nmf.res=nmf.wgt,
+                           specificity.weight=NULL, #because it was precalculated
                            weight.explained=weight.explained,
                            max.genes=max.genes) 
-  if (metric == "jaccard") {
+  
+  if (metric == "cosine") {
+    J <- cosineSimilarity(geneList2table(nmf.wgt))  
+  } else if (metric == "jaccard") {
     J <- jaccardSimilarity(nmf.genes)
-  } else if (metric == "cosine") {
-    J <- cosineSimilarity(nmf.genes)   
   } else {
     stop("Unknown distance metric.")
   }
@@ -289,9 +288,11 @@ getMetaPrograms <- function(nmf.res,
   cl_members <- cutree(tree, k = nprograms)
   
   #Get consensus markers for MPs
-  markers.consensus <- get_metaprogram_consensus(nmf.genes=nmf.genes,
+  markers.consensus <- get_metaprogram_consensus(nmf.wgt=nmf.wgt,
+                                                 nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
+                                                 weight.explained=weight.explained,
                                                  max.genes=max.genes,
                                                  cl_members=cl_members)
   #Get meta-program metrics
@@ -371,7 +372,7 @@ getMetaPrograms <- function(nmf.res,
 #' @importFrom stats as.dendrogram
 #' @export  
 plotMetaPrograms <- function(mp.res,
-                            similarity.cutoff=c(0,0.8),
+                            similarity.cutoff=c(0,1),
                             scale = "none",
                             palette = viridis(100, option="A", direction=-1),
                             annotation_colors = NULL,

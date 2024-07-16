@@ -19,23 +19,21 @@ jaccardSimilarity <- function(gene.vectors) {
 }
 
 #Calculate cosine similarity
-cosineSimilarity <- function(gene.vectors) {
-  gene.table <- geneList2table(gene.vectors)
-  cosine.matrix <- cosine(as.matrix(gene.table))
+cosineSimilarity <- function(gene.table) {
+  cosine.matrix <- lsa::cosine(as.matrix(gene.table))
   return(cosine.matrix)
 }
 
 #From list of genes to complete table, with imputed zeros
 geneList2table <- function(gene.vectors) {
-  allgenes <- unique(unlist(lapply(gene.vectors, names)))
-  gene.table <- lapply(gene.vectors, function(x) {
-    zeros.names <- setdiff(allgenes, names(x))
-    zeros <- rep(0, length(zeros.names))
-    names(zeros) <- zeros.names
-    x <- c(x, zeros)
-    x[allgenes]
+  names <- names(gene.vectors)
+  gene.vectors <- lapply(names, function(n) {
+    g <- gene.vectors[[n]]
+    colnames(g) <- paste(n,seq(1,ncol(g)),sep=".")
+    g
   })
-  return(as.data.frame(gene.table))
+  gene.table <- Reduce(f=cbind, x=gene.vectors)
+  return(gene.table)
 }
 
 #Calculate entropy
@@ -61,25 +59,35 @@ findHVG <- function(obj.list, nfeatures=2000,
 }
 
 #Calculate metrics for meta-programs
-get_metaprogram_consensus <- function(nmf.genes=NULL,
+get_metaprogram_consensus <- function(nmf.wgt,
                                       nprograms=10,
                                       min.confidence=0,
                                       max.genes=200,
-                                      comb.function=mean,
                                       cl_members=NULL) {
   
   markers.consensus <- lapply(seq(1, nprograms), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
-    gene.vectors <- nmf.genes[which.samples]
-    gene.table <- geneList2table(gene.vectors)
+    gene.table <- geneList2table(nmf.wgt)[,which.samples]
     
-    genes.avg <- apply(gene.table, 1, comb.function)
-    genes.confidence <- apply(gene.table, 1, function(x){sum(x>0)/ length(x)})
-    
-    genes.avg <- genes.avg[genes.confidence > min.confidence]
+    genes.avg <- apply(as.matrix(gene.table), 1, function(x){
+      mean <- mean(x)
+      sd <- sd(x)
+      x.out <- x[x>mean-2*sd & x<mean+2*sd]  #remove outliers
+      mean(x.out)
+    })
     genes.avg <- sort(genes.avg, decreasing = T)
+    genes.pass <- weightCumul(genes.avg)
     
-    head(genes.avg, min(length(genes.avg), max.genes))
+    
+    this <- nmf.genes[which.samples]
+    genes.only <- lapply(this, names)
+    genes.sum <- sort(table(unlist(genes.only)), decreasing=T)
+    genes.confidence <- genes.sum/length(this)
+    genes.confidence <- genes.confidence[genes.confidence > min.confidence]
+    
+    genes.pass <- genes.pass[names(genes.pass) %in% names(genes.confidence)]
+    
+    head(genes.pass, min(length(genes.pass), max.genes))
   })
   
   names(markers.consensus) <- paste0("MetaProgram",seq(1,nprograms))
@@ -164,7 +172,16 @@ nonNegativePCA <- function(pca, k) {
 } 
 
 #Weighting factor matrix by feature specificity
-weightedLoad <- function(matrix, w) {
+weightedLoadings <- function(nmf.res,
+                        specificity.weight=5) {
+  
+  nmf.wgt <- lapply(nmf.res, function(model) {
+    wgtLoad(model$w, w=specificity.weight)
+  })
+  return(nmf.wgt)
+}
+
+wgtLoad <- function(matrix, w) {
   rownorm <- apply(matrix, 1, normVector)
   spec <- apply(rownorm, 2, max)
   spec.w <- spec^w
@@ -179,4 +196,12 @@ normVector <- function(vector) {
     vector <- vector/s
   }
   return(vector)
+}
+
+weightCumul <- function(vector, weight.explained=0.5) {
+    x.sorted <- sort(vector, decreasing = T)
+    cs <- cumsum(x.sorted)
+    norm.cs <- normVector(cs)
+    norm.cs <- norm.cs/max(norm.cs)
+    x.sorted[norm.cs<weight.explained]
 }

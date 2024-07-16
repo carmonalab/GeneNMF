@@ -10,7 +10,7 @@ getMetaPrograms(
   specificity.weight = 5,
   weight.explained = 0.5,
   max.genes = 200,
-  metric = c("jaccard", "cosine"),
+  metric = c("cosine", "jaccard"),
   hclust.method = "ward.D2",
   min.confidence = 0.2,
   remove.empty = TRUE
