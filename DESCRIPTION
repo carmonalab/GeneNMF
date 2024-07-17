@@ -16,11 +16,14 @@ Description: A collection of methods to extract gene programs from single-cell g
 biocViews:
 Depends: R (>= 4.3.0)
 Imports: RcppML,
-    irlba,
+    Matrix,
     stats,
+    methods,
+    utils,
     Seurat (>= 4.3.0),
     cluster,
     lsa,
+    irlba,
     pheatmap,
     viridis
 Suggests: knitr,

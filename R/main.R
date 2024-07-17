@@ -184,6 +184,7 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=4:5,
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_genes <- getNMFgenes(geneNMF_programs)
 #' 
+#' @importFrom utils head
 #' @export
   
 getNMFgenes <- function(nmf.res,
@@ -255,9 +256,10 @@ getNMFgenes <- function(nmf.res,
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
 #' 
-#' @importFrom stats cutree dist
+#' @importFrom stats cutree dist as.dist hclust
 #' @importFrom cluster silhouette
 #' @importFrom lsa cosine
+#' @importFrom utils head
 #' @export  
 getMetaPrograms <- function(nmf.res,
                             nprograms=10,
@@ -494,6 +496,7 @@ runGSEA <- function(genes, universe=NULL,
 #' data(sampleObj)
 #' sampleObj <- runNMF(sampleObj, k=8)
 #' @importFrom RcppML nmf
+#' @importFrom methods new
 #' @export  
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
