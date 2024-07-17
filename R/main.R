@@ -40,7 +40,7 @@
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
                    min.exp=0.01, max.exp=3.0,
-                   center=FALSE, scale=TRUE,
+                   center=FALSE, scale=FALSE,
                    min.cells.per.sample = 10,
                    hvg.blocklist=NULL, seed=123) {
   
@@ -119,11 +119,11 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 #' @importFrom irlba prcomp_irlba
 #' @export  
 
-multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
+multiPCA <- function(obj.list, assay="RNA", slot="data", k=4:5,
                      hvg=NULL, nfeatures = 500,
                      min.exp=0.01, max.exp=3.0,
                      min.cells.per.sample = 10,
-                     center=FALSE, scale=TRUE,
+                     center=FALSE, scale=FALSE,
                      hvg.blocklist=NULL, seed=123) {
   
   set.seed(seed)
@@ -133,7 +133,7 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
   obj.list <- obj.list[nc > min.cells.per.sample]
   
   if (is.null(hvg)) {
-    hvg <- findHVG(obj.list, nfeatures=nfeatures,
+    hvg <- GeneNMF:::findHVG(obj.list, nfeatures=nfeatures,
                              min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
   }
   
@@ -143,16 +143,20 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
     mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
                                    hvg=hvg, center=center,
                                    scale=scale, non_negative = FALSE)
-    
-    pca <- prcomp_irlba(t(as.matrix(mat)), center=F, scale.=F, n=k)
-    rownames(pca$rotation) <- rownames(mat)
-    
-    nn_pca <- nonNegativePCA(pca, k=k) 
-    
-    npca.obj <- list(w = nn_pca, h = NULL)
-    npca.obj
+    res.k <- lapply(k, function(k.this) {
+      
+      pca <- prcomp_irlba(t(as.matrix(mat)), center=F, scale.=F, n=k.this)
+      rownames(pca$rotation) <- rownames(mat)
+      
+      nn_pca <- GeneNMF:::nonNegativePCA(pca, k=k.this) 
+      
+      npca.obj <- list(w = nn_pca, h = NULL)
+      npca.obj
+    })
+    names(res.k) <- paste0("k",k)
+    res.k
   })
-  names(pca.res) <- paste0(names(pca.res), ".k", k)
+  pca.res <- unlist(pca.res, recursive = FALSE)
   
   return(pca.res)
 }  
@@ -496,7 +500,7 @@ runGSEA <- function(genes, universe=NULL,
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
                    L1=c(0,0), hvg=NULL,
-                   center=FALSE, scale=TRUE) {
+                   center=FALSE, scale=FALSE) {
   
   
   set.seed(seed)
@@ -555,7 +559,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' @importFrom Matrix t
 #' @export  
 getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
-                          center=FALSE, scale=TRUE,
+                          center=FALSE, scale=FALSE,
                           non_negative=TRUE) {
   
   mat <- GetAssayData(obj, assay=assay, layer=slot)

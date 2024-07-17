@@ -10,7 +10,7 @@ getDataMatrix(
   slot = "data",
   hvg = NULL,
   center = FALSE,
-  scale = TRUE,
+  scale = FALSE,
   non_negative = TRUE
 )
 }

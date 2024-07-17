@@ -14,7 +14,7 @@ runNMF(
   L1 = c(0, 0),
   hvg = NULL,
   center = FALSE,
-  scale = TRUE
+  scale = FALSE
 )
 }
 \arguments{

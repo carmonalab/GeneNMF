@@ -8,14 +8,14 @@ multiPCA(
   obj.list,
   assay = "RNA",
   slot = "data",
-  k = 10,
+  k = 4:5,
   hvg = NULL,
   nfeatures = 500,
   min.exp = 0.01,
   max.exp = 3,
   min.cells.per.sample = 10,
   center = FALSE,
-  scale = TRUE,
+  scale = FALSE,
   hvg.blocklist = NULL,
   seed = 123
 )
