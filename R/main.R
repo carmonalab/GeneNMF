@@ -59,8 +59,8 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   nmf.res <- lapply(obj.list, function(this) {
     
     mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
-                      hvg=hvg, do_centering=center,
-                      do_scaling=scale)
+                      hvg=hvg, center=center,
+                      scale=scale)
     
     res.k <- lapply(k, function(k.this) {
       
@@ -141,8 +141,8 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=10,
   pca.res <- lapply(obj.list, function(this) {
     
     mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
-                                   hvg=hvg, do_centering=center,
-                                   do_scaling=scale, non_negative = FALSE)
+                                   hvg=hvg, center=center,
+                                   scale=scale, non_negative = FALSE)
     
     pca <- prcomp_irlba(t(as.matrix(mat)), center=F, scale.=F, n=k)
     rownames(pca$rotation) <- rownames(mat)
@@ -509,7 +509,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   }
   
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
-                    hvg=hvg, do_centering=center, do_scaling=scale)
+                    hvg=hvg, center=center, scale=scale)
   
   model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed)
   
@@ -540,8 +540,8 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' @param slot Get data matrix from this slot (=layer)
 #' @param hvg List of variable genes to subset the matrix. If NULL, uses
 #'     all genes
-#' @param do_centering Whether to center the data matrix
-#' @param do_scaling Whether to scale the data matrix
+#' @param center Whether to center the data matrix
+#' @param scale Whether to scale the data matrix
 #' @param non_negative Enforce non-negative values for NMF
 #'     
 #' @return Returns a sparse data matrix (cells per genes), subset 
@@ -554,7 +554,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' @importFrom Seurat GetAssayData
 #' @export  
 getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
-                          do_centering=FALSE, do_scaling=TRUE,
+                          center=FALSE, scale=TRUE,
                           non_negative=TRUE) {
   
   mat <- GetAssayData(obj, assay=assay, layer=slot)
@@ -563,7 +563,7 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
   if (!is.null(hvg)) mat <- mat[hvg,]
   
   #Center and rescale
-  mat <- scale(mat, center=do_centering, scale=do_scaling)
+  mat <- t(scale(t(mat), center=center, scale=scale))
   if (non_negative) {
     mat[mat<0] <- 0
   }

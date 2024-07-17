@@ -9,8 +9,8 @@ getDataMatrix(
   assay = "RNA",
   slot = "data",
   hvg = NULL,
-  do_centering = FALSE,
-  do_scaling = TRUE,
+  center = FALSE,
+  scale = TRUE,
   non_negative = TRUE
 )
 }
@@ -24,9 +24,9 @@ getDataMatrix(
 \item{hvg}{List of variable genes to subset the matrix. If NULL, uses
 all genes}
 
-\item{do_centering}{Whether to center the data matrix}
+\item{center}{Whether to center the data matrix}
 
-\item{do_scaling}{Whether to scale the data matrix}
+\item{scale}{Whether to scale the data matrix}
 
 \item{non_negative}{Enforce non-negative values for NMF}
 }

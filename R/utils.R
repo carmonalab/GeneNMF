@@ -101,7 +101,7 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
                                    markers.consensus=NULL,
                                    cl_members=NULL) {
   nprograms <- length(markers.consensus)
-  all.samples <- unique(gsub("\\.k\\d+\\.p\\d+","",colnames(J)))
+  all.samples <- unique(gsub("\\.k\\d+\\.\\d+","",colnames(J)))
   sample.coverage <- lapply(seq(1, nprograms), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
     ss <- gsub("\\.k\\d+\\.p\\d+","",which.samples)
