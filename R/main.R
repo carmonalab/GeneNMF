@@ -552,6 +552,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' matrix <- getDataMatrix(sampleObj)
 #' 
 #' @importFrom Seurat GetAssayData
+#' @importFrom Matrix t
 #' @export  
 getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
                           center=FALSE, scale=TRUE,
@@ -563,7 +564,7 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
   if (!is.null(hvg)) mat <- mat[hvg,]
   
   #Center and rescale
-  mat <- t(scale(t(mat), center=center, scale=scale))
+  mat <- t(scale(Matrix::t(mat), center=center, scale=scale))
   if (non_negative) {
     mat[mat<0] <- 0
   }
