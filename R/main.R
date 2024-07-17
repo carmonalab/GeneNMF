@@ -133,7 +133,7 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=4:5,
   obj.list <- obj.list[nc > min.cells.per.sample]
   
   if (is.null(hvg)) {
-    hvg <- GeneNMF:::findHVG(obj.list, nfeatures=nfeatures,
+    hvg <- findHVG(obj.list, nfeatures=nfeatures,
                              min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
   }
   
@@ -148,7 +148,7 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=4:5,
       pca <- prcomp_irlba(t(as.matrix(mat)), center=F, scale.=F, n=k.this)
       rownames(pca$rotation) <- rownames(mat)
       
-      nn_pca <- GeneNMF:::nonNegativePCA(pca, k=k.this) 
+      nn_pca <- nonNegativePCA(pca, k=k.this) 
       
       npca.obj <- list(w = nn_pca, h = NULL)
       npca.obj
