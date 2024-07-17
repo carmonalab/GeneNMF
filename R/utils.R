@@ -60,12 +60,18 @@ findHVG <- function(obj.list, nfeatures=2000,
 
 #Calculate metrics for meta-programs
 get_metaprogram_consensus <- function(nmf.wgt,
-                                      nmf.genes,
                                       nprograms=10,
-                                      min.confidence=0,
+                                      min.confidence=0.5,
                                       weight.explained=0.5,
                                       max.genes=200,
                                       cl_members=NULL) {
+  
+  #calculate genes that explain 80% of weight in individual samples
+  #this is used to calculate gene confidence 
+  nmf.genes.single <- getNMFgenes(nmf.res=nmf.wgt,
+                                     specificity.weight=NULL,
+                                     weight.explained=0.8,
+                                     max.genes=1000) 
   
   markers.consensus <- lapply(seq(1, nprograms), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
@@ -80,8 +86,7 @@ get_metaprogram_consensus <- function(nmf.wgt,
     genes.avg <- sort(genes.avg, decreasing = T)
     genes.pass <- weightCumul(genes.avg, weight.explained=weight.explained)
     
-    
-    this <- nmf.genes[which.samples]
+    this <- nmf.genes.single[which.samples]
     genes.only <- lapply(this, names)
     genes.sum <- sort(table(unlist(genes.only)), decreasing=T)
     genes.confidence <- genes.sum/length(this)

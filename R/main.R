@@ -266,7 +266,7 @@ getMetaPrograms <- function(nmf.res,
                             max.genes=200,
                             metric = c("cosine","jaccard"),
                             hclust.method="ward.D2",
-                            min.confidence=0.2,
+                            min.confidence=0.5,
                             remove.empty=TRUE) {
   
   metric = metric[1]
@@ -274,14 +274,13 @@ getMetaPrograms <- function(nmf.res,
   nmf.wgt <- weightedLoadings(nmf.res=nmf.res,
                            specificity.weight=specificity.weight)
   
-  nmf.genes <- getNMFgenes(nmf.res=nmf.wgt,
-                           specificity.weight=NULL, #because it was precalculated
-                           weight.explained=weight.explained,
-                           max.genes=max.genes) 
-  
   if (metric == "cosine") {
     J <- cosineSimilarity(geneList2table(nmf.wgt))  
   } else if (metric == "jaccard") {
+    nmf.genes <- getNMFgenes(nmf.res=nmf.wgt,
+                             specificity.weight=NULL, #because it was precalculated
+                             weight.explained=weight.explained,
+                             max.genes=max.genes) 
     J <- jaccardSimilarity(nmf.genes)
   } else {
     stop("Unknown distance metric.")
@@ -293,7 +292,6 @@ getMetaPrograms <- function(nmf.res,
   
   #Get consensus markers for MPs
   markers.consensus <- get_metaprogram_consensus(nmf.wgt=nmf.wgt,
-                                                 nmf.genes=nmf.genes,
                                                  nprograms=nprograms,
                                                  min.confidence=min.confidence,
                                                  weight.explained=weight.explained,
