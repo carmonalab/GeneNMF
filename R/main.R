@@ -570,6 +570,11 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
   
   #Center and rescale
   mat <- t(scale(Matrix::t(mat), center=center, scale=scale))
+  
+  #check scaling with rowsum=0 (gives NaN)
+  if (scale) {
+    mat[is.na(mat)] <- 0
+  }
   if (non_negative) {
     mat[mat<0] <- 0
   }
