@@ -42,8 +42,13 @@ Cluster gene programs from multiple samples and k's into meta-programs (MPs), i.
 geneNMF.metaprograms <- getMetaPrograms(geneNMF.programs, nMP=5) # here we get 5 MPs
 ```
 
-## GeneNMF demo
-Find a demo of the functionalities of GeneNMF and more explanations in the following tutorial: [HTML](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html) and [repository](https://github.com/carmonalab/GeneNMF.demo).
+## GeneNMF demos
+Find demos of the functionalities of GeneNMF and more explanations in the following tutorials:
+
+* [Decomposing human PBMC data](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html)
+* [Gene programs in cancer cells](https://carmonalab.github.io/NMF_demo_cancercells.html)
+
+For the source code, see the [GeneNMF.demo repository](https://github.com/carmonalab/GeneNMF.demo).
 
 ## News: version 0.6 is here
 
