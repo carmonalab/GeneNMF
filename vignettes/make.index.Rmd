@@ -10,7 +10,9 @@ vignette: >
 
 Currently available GeneNMF vignettes:
 
-1. A demo of the **basic functionalities** of GeneNMF on PBMC scRNA-seq data - [GeneNMF basics](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html).
+1. A demo of the **basic functionalities** of GeneNMF on PBMC scRNA-seq data - [GeneNMF basics](https://carmonalab.github.io/GeneNMF.demo/NMF_demo_PBMC.html)
+
+2. GeneNMF on cancer cells to characterize **intratumor heterogeneity** - [Cancer metaprograms](https://carmonalab.github.io/NMF_demo_cancercells.html)
 
 More information available at the [GeneNMF repository](https://github.com/carmonalab/GeneNMF) and [GeneNMF demo repository](https://github.com/carmonalab/GeneNMF.demo).
 

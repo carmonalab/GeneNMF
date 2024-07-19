@@ -226,7 +226,7 @@ getNMFgenes <- function(nmf.res,
 #' and values of k.
 #'
 #' @param nmf.res A list of NMF models obtained from \code{\link{multiNMF}}
-#' @param nprograms Total number of meta-programs
+#' @param nMP Total number of meta-programs
 #' @param metric Metric to calculate pairwise similarity between programs     
 #' @param max.genes Max number of genes for each programs
 #' @param hclust.method Method to build similarity tree between individual programs
@@ -254,7 +254,7 @@ getNMFgenes <- function(nmf.res,
 #' library(Seurat)
 #' data(sampleObj)
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
-#' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
+#' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nMP=3)
 #' 
 #' @importFrom stats cutree dist as.dist hclust
 #' @importFrom cluster silhouette
@@ -262,7 +262,7 @@ getNMFgenes <- function(nmf.res,
 #' @importFrom utils head
 #' @export  
 getMetaPrograms <- function(nmf.res,
-                            nprograms=10,
+                            nMP=10,
                             specificity.weight=5,
                             weight.explained=0.5,
                             max.genes=200,
@@ -290,11 +290,11 @@ getMetaPrograms <- function(nmf.res,
   Jdist <- as.dist(1-J)
   #Cluster programs by gene overlap
   tree <- hclust(Jdist, method=hclust.method)
-  cl_members <- cutree(tree, k = nprograms)
+  cl_members <- cutree(tree, k = nMP)
   
   #Get consensus markers for MPs
   markers.consensus <- get_metaprogram_consensus(nmf.wgt=nmf.wgt,
-                                                 nprograms=nprograms,
+                                                 nMP=nMP,
                                                  min.confidence=min.confidence,
                                                  weight.explained=weight.explained,
                                                  max.genes=max.genes,
@@ -368,7 +368,7 @@ getMetaPrograms <- function(nmf.res,
 #' library(Seurat)
 #' data(sampleObj)
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
-#' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
+#' geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nMP=3)
 #' plotMetaPrograms(geneNMF_metaprograms)
 #' 
 #' @importFrom pheatmap pheatmap
@@ -396,7 +396,7 @@ plotMetaPrograms <- function(mp.res,
   #Recover order of MP clusters
   labs.order <- labels(as.dendrogram(tree))
   cluster.order <- unique(cl_members[labs.order])
-  nprograms <- length(cluster.order)
+  nMP <- length(cluster.order)
   
   #Annotation column
   annotation_col <- as.data.frame(cl_members)
@@ -413,8 +413,8 @@ plotMetaPrograms <- function(mp.res,
                  main = main,
                  cluster_rows = tree,
                  cluster_cols = tree,
-                 cutree_rows = nprograms,
-                 cutree_cols = nprograms,
+                 cutree_rows = nMP,
+                 cutree_cols = nMP,
                  annotation_col = annotation_col,
                  annotation_row = annotation_col,
                  annotation_colors = annotation_colors,

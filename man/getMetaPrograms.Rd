@@ -6,7 +6,7 @@
 \usage{
 getMetaPrograms(
   nmf.res,
-  nprograms = 10,
+  nMP = 10,
   specificity.weight = 5,
   weight.explained = 0.5,
   max.genes = 200,
@@ -19,7 +19,7 @@ getMetaPrograms(
 \arguments{
 \item{nmf.res}{A list of NMF models obtained from \code{\link{multiNMF}}}
 
-\item{nprograms}{Total number of meta-programs}
+\item{nMP}{Total number of meta-programs}
 
 \item{specificity.weight}{A parameter controlling how specific gene
 should be for each program. `specificity.weight=0` no constraint on
@@ -61,6 +61,6 @@ and values of k.
 library(Seurat)
 data(sampleObj)
 geneNMF_programs <- multiNMF(list(sampleObj), k=5)
-geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
+geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nMP=3)
 
 }

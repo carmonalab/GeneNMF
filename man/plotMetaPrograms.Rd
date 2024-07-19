@@ -48,7 +48,7 @@ tree of pairwise similarities between clusters (as a 'hclust' object).
 library(Seurat)
 data(sampleObj)
 geneNMF_programs <- multiNMF(list(sampleObj), k=5)
-geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nprograms=3)
+geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nMP=3)
 plotMetaPrograms(geneNMF_metaprograms)
 
 }

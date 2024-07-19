@@ -60,7 +60,7 @@ findHVG <- function(obj.list, nfeatures=2000,
 
 #Calculate metrics for meta-programs
 get_metaprogram_consensus <- function(nmf.wgt,
-                                      nprograms=10,
+                                      nMP=10,
                                       min.confidence=0.5,
                                       weight.explained=0.5,
                                       max.genes=200,
@@ -73,7 +73,7 @@ get_metaprogram_consensus <- function(nmf.wgt,
                                      weight.explained=0.8,
                                      max.genes=1000) 
   
-  markers.consensus <- lapply(seq(1, nprograms), function(c) {
+  markers.consensus <- lapply(seq(1, nMP), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
     gene.table <- geneList2table(nmf.wgt)[,which.samples]
     
@@ -97,7 +97,7 @@ get_metaprogram_consensus <- function(nmf.wgt,
     head(genes.pass, min(length(genes.pass), max.genes))
   })
   
-  names(markers.consensus) <- paste0("MetaProgram",seq(1,nprograms))
+  names(markers.consensus) <- paste0("MetaProgram",seq(1,nMP))
   return(markers.consensus)
 }
 
@@ -105,9 +105,9 @@ get_metaprogram_consensus <- function(nmf.wgt,
 get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
                                    markers.consensus=NULL,
                                    cl_members=NULL) {
-  nprograms <- length(markers.consensus)
+  nMP <- length(markers.consensus)
   all.samples <- unique(gsub("\\.k\\d+\\.\\d+","",colnames(J)))
-  sample.coverage <- lapply(seq(1, nprograms), function(c) {
+  sample.coverage <- lapply(seq(1, nMP), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
     ss <- gsub("\\.k\\d+\\.\\d+","",which.samples)
     ss <- factor(ss, levels=all.samples)
@@ -115,16 +115,16 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
     #Percent samples represented
     sum(ss.tab>0)/length(ss.tab)
   })
-  names(sample.coverage) <- paste0("MetaProgram",seq(1,nprograms))
+  names(sample.coverage) <- paste0("MetaProgram",seq(1,nMP))
   
   #calculate MP silhouettes
   sil <- cluster::silhouette(cl_members, dist=Jdist)
   sil.widths <- summary(sil)$clus.avg.widths
-  names(sil.widths) <- paste0("MetaProgram",seq(1,nprograms))
+  names(sil.widths) <- paste0("MetaProgram",seq(1,nMP))
   
   #calculate MP internal average similarity
-  clusterSim <- rep(NA,nprograms)
-  for(i in seq_len(nprograms)){
+  clusterSim <- rep(NA,nMP)
+  for(i in seq_len(nMP)){
     selectMP <- which(cl_members==i)
     if (length(selectMP) > 1) { #needs at least two values
       selectJ <- J[selectMP,selectMP]
@@ -147,7 +147,7 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
     numberGenes=metaprograms.length,
     numberPrograms=metaprograms.size)
   
-  rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nprograms))
+  rownames(metaprograms.metrics) <- paste0("MetaProgram",seq(1,nMP))
   
   return(metaprograms.metrics)
 }
