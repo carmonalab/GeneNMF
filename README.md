@@ -35,11 +35,11 @@ sampleObj <- runNMF(sampleObj, k=5)
 Perform NMF over a list of Seurat objects and for multiple values of k (number of NMF factors) to extract gene programs
 ```{r}
 sampleObj.list <- Seurat::SplitObject(sampleObj, split.by = "donor")
-geneNMF.programs <- multiNMF(sampleObj.list, k=4:9) # here k from 4 to 9
+geneNMF.programs <- multiNMF(sampleObj.list, k=4:9)
 ```
 Cluster gene programs from multiple samples and k's into meta-programs (MPs), i.e. consensus programs that are robustly identified across NMF runs. Compute MP metrics and most influencial MP genes.
 ```{r}
-geneNMF.metaprograms <- getMetaPrograms(geneNMF.programs, nMP=5) # here we get 5 MPs
+geneNMF.metaprograms <- getMetaPrograms(geneNMF.programs, nMP=5)
 ```
 
 ## GeneNMF demos
