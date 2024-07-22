@@ -31,12 +31,19 @@ type \code{msigdbr::msigdbr_species()}}
 Returns a table of enriched gene programs from GSEA
 }
 \description{
-Utility function to run Gene set enrichment analysis (GSEA) against gene 
-sets from MSigDB.
+Utility function to run Gene Set Enrichment Analysis (GSEA) against gene 
+sets from MSigDB. Note: this is an optional function, which is conditional
+to the installation of suggested packages \code{fgsea} and \code{msigdbr}.
 }
 \examples{
 data(sampleObj)
 geneset <- c("BANK1","CD22","CD79A","CD19","IGHD","IGHG3","IGHM")
-gsea_res <- runGSEA(geneset, universe=rownames(sampleObj), category = "C8")
+#test is conditional on availability of suggested packages
+if (requireNamespace("fgsea", quietly=TRUE) &
+   requireNamespace("msigdbr", quietly=TRUE)) {
+   gsea_res <- runGSEA(geneset,
+       universe=rownames(sampleObj),
+       category = "C8")
+}
 
 }

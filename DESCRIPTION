@@ -29,7 +29,6 @@ Imports: RcppML,
 Suggests: knitr,
     rmarkdown,
     fgsea,
-    dplyr,
     msigdbr
 VignetteBuilder: knitr
 URL: https://github.com/carmonalab/GeneNMF
