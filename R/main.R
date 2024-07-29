@@ -358,6 +358,7 @@ getMetaPrograms <- function(nmf.res,
 #' @param scale Heatmap rescaling (passed to pheatmap as 'scale')
 #' @param downsample Limit max number of samples in heatmap, to avoid overloading
 #'     the graphics
+#' @param showtree Whether to plot the hierarchical clustering tree
 #' @param palette Heatmap color palette (passed to pheatmap as 'color')
 #' @param annotation_colors Color palette for MP annotations 
 #' @param main Heatmap title 
@@ -381,6 +382,7 @@ plotMetaPrograms <- function(mp.res,
                             similarity.cutoff=c(0,1),
                             scale = "none",
                             downsample = 500,
+                            showtree = TRUE,
                             palette = viridis(100, option="A", direction=-1),
                             annotation_colors = NULL,
                             main = "Clustered Heatmap",
@@ -391,17 +393,18 @@ plotMetaPrograms <- function(mp.res,
   J <- mp.res[["programs.similarity"]]
   tree <- mp.res[["programs.tree"]]
   cl_members <- mp.res[["programs.clusters"]]
+  labs.order <- labels(as.dendrogram(tree))
   
   #downsample, to avoid overloading the graphics
   if (length(cl_members) > downsample) {
     sid.keep <- downsampleMin(cl_members, size = downsample)
-    sid.prune <- setdiff(names(cl_members), sid.keep)
+    labs.order <- labs.order[labs.order %in% sid.keep]
     
-    cl_members <- cl_members[sid.keep]
-    J <- J[sid.keep, sid.keep]
+    cl_members <- cl_members[labs.order]
+    J <- J[labs.order, labs.order]
     
-    Jdist <- as.dist(1-J)
-    tree <- hclust(Jdist, method=tree$method)
+    #disable 'tree' for downsampled heatmap
+    show_tree <- FALSE
   }
   
   cl_names <- names(cl_members)
@@ -409,9 +412,12 @@ plotMetaPrograms <- function(mp.res,
   names(cl_members) <- cl_names
 
   #Recover order of MP clusters
-  labs.order <- labels(as.dendrogram(tree))
   cluster.order <- unique(cl_members[labs.order])
   nMP <- length(cluster.order)
+  
+  #Gaps for heatmap
+  diffs <- diff(as.integer(as.factor(cl_members))) 
+  gaps <- which(diffs != 0)
   
   #Annotation column
   annotation_col <- as.data.frame(cl_members)
@@ -422,6 +428,10 @@ plotMetaPrograms <- function(mp.res,
   J[J<similarity.cutoff[1]] <- similarity.cutoff[1]
   J[J>similarity.cutoff[2]] <- similarity.cutoff[2]
   
+  if (!showtree) {
+    tree <- FALSE
+  }
+  
   ph <- pheatmap(J,
                  scale = scale,
                  color = palette,
@@ -430,6 +440,8 @@ plotMetaPrograms <- function(mp.res,
                  cluster_cols = tree,
                  cutree_rows = nMP,
                  cutree_cols = nMP,
+                 gaps_row = gaps,
+                 gaps_col = gaps,
                  annotation_col = annotation_col,
                  annotation_row = annotation_col,
                  annotation_colors = annotation_colors,

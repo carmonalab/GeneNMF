@@ -8,6 +8,8 @@ plotMetaPrograms(
   mp.res,
   similarity.cutoff = c(0, 1),
   scale = "none",
+  downsample = 500,
+  showtree = TRUE,
   palette = viridis(100, option = "A", direction = -1),
   annotation_colors = NULL,
   main = "Clustered Heatmap",
@@ -22,6 +24,11 @@ plotMetaPrograms(
 \item{similarity.cutoff}{Min and max values for similarity metric}
 
 \item{scale}{Heatmap rescaling (passed to pheatmap as 'scale')}
+
+\item{downsample}{Limit max number of samples in heatmap, to avoid overloading
+the graphics}
+
+\item{showtree}{Whether to plot the hierarchical clustering tree}
 
 \item{palette}{Heatmap color palette (passed to pheatmap as 'color')}
 
