@@ -404,7 +404,7 @@ plotMetaPrograms <- function(mp.res,
     J <- J[labs.order, labs.order]
     
     #disable 'tree' for downsampled heatmap
-    show_tree <- FALSE
+    showtree <- FALSE
   }
   
   cl_names <- names(cl_members)
