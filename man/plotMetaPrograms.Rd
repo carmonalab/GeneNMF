@@ -8,7 +8,7 @@ plotMetaPrograms(
   mp.res,
   similarity.cutoff = c(0, 1),
   scale = "none",
-  downsample = 500,
+  downsample = 1000,
   showtree = TRUE,
   palette = viridis(100, option = "A", direction = -1),
   annotation_colors = NULL,
