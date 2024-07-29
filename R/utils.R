@@ -24,6 +24,21 @@ cosineSimilarity <- function(gene.table) {
   return(cosine.matrix)
 }
 
+#Downsample vector, while keeping at least one element per class
+downsampleMin <- function(vector, size=500) {
+  if (length(vector) <= size) {
+    return(vector)
+  }
+  vecout <- names(vector)[!duplicated(vector)] #first match
+  vector <- names(vector)
+  vector <- setdiff(vector, vecout)
+  if (length(vecout) >= size) {
+    return(vecout)
+  }
+  ss <- sample(vector, size = size - length(vecout))
+  return(c(vecout, ss))
+}
+
 #From list of genes to complete table, with imputed zeros
 geneList2table <- function(gene.vectors) {
   names <- names(gene.vectors)
