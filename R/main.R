@@ -689,6 +689,7 @@ findVariableFeatures_wfilters <- function(
 #' geneNMF_metaprograms_filtered <- dropMetaPrograms(geneNMF_metaprograms, dropMP = c("MP2")) 
 #' 
 #' @importFrom dendextend prune
+#' @importFrom stats as.hclust as.dendrogram
 #' @export  
 dropMetaPrograms <- function(mp.res,
                              dropMP=NULL) {
