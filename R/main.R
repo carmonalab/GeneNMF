@@ -692,11 +692,8 @@ findVariableFeatures_wfilters <- function(
 #' @export  
 dropMetaPrograms <- function(mp.res,
                              dropMP=NULL) {
-  if (is.null(dropMP)) {
-    return(mp.res)
-  }
+ 
   mp.all <- names(mp.res$metaprograms.genes)
-  
   todrop <- as.vector(dropMP)
   
   missing <- setdiff(todrop, mp.all)
@@ -715,7 +712,9 @@ dropMetaPrograms <- function(mp.res,
   
   #drop from the tree (prune)
   tree <- mp.res$programs.tree
-  drop.row <- mp.res$programs.clusters[paste0("MP", mp.res$programs.clusters) %in% todrop]
+  which.drop <- paste0("MP", mp.res$programs.clusters) %in% c(todrop,"MPNA")
+  drop.row <- mp.res$programs.clusters[which.drop]
+  
   dend <- prune(as.dendrogram(tree), names(drop.row))
   
   #drop from the clusters
