@@ -2,6 +2,15 @@
 \title{News for package \pkg{GeneNMF}}
 \encoding{UTF-8}
 
+\section{Version 0.7.0}{
+  New in this version:
+  \itemize{
+    \item The function 'getMetaPrograms()' now returns also a matrix of "metaprogram composition", in terms of how many individual programs from each sample contributed to defining the MP. This is stored in the 'metaprograms.composition' slot of the resulting object
+    \item The function 'runGSEA()' now allows running gene set enrichment against a custom DB of signatures
+    \item Check that parameter 'k' is an integer >=2
+  }
+}
+
 \section{Version 0.6.2}{
   New in this version:
   \itemize{
