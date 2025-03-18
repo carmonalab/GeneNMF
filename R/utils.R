@@ -184,8 +184,8 @@ get_metaprogram_composition <- function(J=NULL,
     ss <- factor(ss, levels=all.samples)
     table(ss)
   })
-  names(sample.coverage) <- paste0("MetaProgram",seq(1,nMP))
-  composition <- do.call(rbind, sample.coverage)
+  names(sample.comp) <- paste0("MetaProgram",seq(1,nMP))
+  composition <- do.call(rbind, sample.comp)
   return(composition)
 }
 
