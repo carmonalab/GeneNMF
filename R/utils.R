@@ -172,6 +172,23 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   return(metaprograms.metrics)
 }
 
+#In which samples was a MP detected?
+get_metaprogram_composition <- function(J=NULL,
+                                    markers.consensus=NULL,
+                                    cl_members=NULL) {
+  nMP <- length(markers.consensus)
+  all.samples <- unique(gsub("\\.k\\d+\\.\\d+","",colnames(J)))
+  sample.comp <- lapply(seq(1, nMP), function(c) {
+    which.samples <- names(cl_members)[cl_members == c]
+    ss <- gsub("\\.k\\d+\\.\\d+","",which.samples)
+    ss <- factor(ss, levels=all.samples)
+    table(ss)
+  })
+  names(sample.coverage) <- paste0("MetaProgram",seq(1,nMP))
+  composition <- do.call(rbind, sample.coverage)
+  return(composition)
+}
+
 #Split positive and negative components of PCA, and reorder by variance
 nonNegativePCA <- function(pca, k) {
   

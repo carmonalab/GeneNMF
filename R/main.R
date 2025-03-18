@@ -261,10 +261,12 @@ getNMFgenes <- function(nmf.res,
 #' @return Returns a list with i) 'metaprograms.genes' top genes for each 
 #'     meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs 
 #'     statistics: a) freq. of samples where the MP is present, b) average 
-#'     silhouette width, c) mean similarity (cosine or Jaccard), d) number of genes in MP, 
-#'     e) number of gene programs in MP; iii) 'programs.similarity': matrix of 
-#'     similarities (Jaccard or cosine) between meta-programs; iv) 'programs.tree': 
-#'     hierarchical clustering of meta-programs (hclust tree); v) 
+#'     silhouette width, c) mean similarity (cosine or Jaccard), d) number of 
+#'     genes in MP, e) number of gene programs in MP; iii) 'metaprogram.composition'
+#'     dataframe containing the number of individual for each sample that
+#'     contributed to the consensus MPs; iv) 'programs.similarity': matrix of 
+#'     similarities (Jaccard or cosine) between meta-programs; v) 'programs.tree': 
+#'     hierarchical clustering of meta-programs (hclust tree); vi) 
 #'     'programs.clusters': meta-program identity for each program
 #'
 #' @examples
@@ -321,10 +323,16 @@ getMetaPrograms <- function(nmf.res,
                                                   markers.consensus=markers.consensus,
                                                   cl_members=cl_members)
   
+  #Get meta-program composition
+  metaprograms.composition <- get_metaprogram_composition(J=J,
+                                                  markers.consensus=markers.consensus,
+                                                  cl_members=cl_members)
+  
   #Remove any empty meta-program
   if (remove.empty) {
     keep <- metaprograms.metrics$numberGenes > 0
     metaprograms.metrics <- metaprograms.metrics[keep,]
+    metaprograms.composition <- metaprograms.composition[keep,]
     markers.consensus <- markers.consensus[keep]
     if (sum(!keep)>0) {
       message(sprintf("Dropped %i empty meta-programs", sum(!keep)))
@@ -340,8 +348,12 @@ getMetaPrograms <- function(nmf.res,
   
   markers.consensus <- markers.consensus[ord]
   names(markers.consensus) <- new.names
+  
+  #Reorder metrics and composition tables
   metaprograms.metrics <- metaprograms.metrics[ord,]
   rownames(metaprograms.metrics) <- new.names
+  metaprograms.composition <- metaprograms.composition[ord,]
+  rownames(metaprograms.composition) <- new.names
   
   map.index <- seq_along(old.names)
   names(map.index) <- as.numeric(gsub("MetaProgram","",old.names))
@@ -357,6 +369,7 @@ getMetaPrograms <- function(nmf.res,
   output.object[["metaprograms.genes"]] <- markers.genes
   output.object[["metaprograms.genes.weights"]] <- markers.consensus
   output.object[["metaprograms.metrics"]] <- metaprograms.metrics
+  output.object[["metaprograms.composition"]] <- metaprograms.composition
   output.object[["programs.similarity"]] <- J
   output.object[["programs.tree"]] <- tree
   output.object[["programs.clusters"]] <- cl_members.new
