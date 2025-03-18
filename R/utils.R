@@ -90,12 +90,17 @@ get_metaprogram_consensus <- function(nmf.wgt,
   
   markers.consensus <- lapply(seq(1, nMP), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
-    gene.table <- geneList2table(nmf.wgt)[,which.samples]
+    gene.table <- GeneNMF:::geneList2table(nmf.wgt)[,which.samples]
     
     genes.avg <- apply(as.matrix(gene.table), 1, function(x){
       mean <- mean(x)
-      sd <- sd(x)
-      x.out <- x[x>mean-2*sd & x<mean+2*sd]  #remove outliers
+      if (length(x) >=3) { #remove outliers (SD only with 3 or more points)
+        sd <- sd(x)
+        x.out <- x[x>mean-2*sd & x<mean+2*sd]  
+      } else {
+        x.out <- mean
+      }
+      
       mean(x.out)
     })
     genes.avg <- sort(genes.avg, decreasing = T)

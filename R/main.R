@@ -50,9 +50,18 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   nc <- lapply(obj.list, ncol)
   obj.list <- obj.list[nc > min.cells.per.sample]
   
-  if (is.null(hvg)) {
+  #check if HVG were manually specified, otherwise calculate
+  if (is.null(hvg) || length(hvg)<=1) {
     hvg <- findHVG(obj.list, nfeatures=nfeatures,
                    min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
+  }
+  #Unit check on k
+  if (!is.numeric(k)) {
+    stop("k must be a numeric vector")
+  }
+  if (sum(k==1) > 0) {
+    warning("k must be a vector of integers larger than 1. Dropping invalid values")
+    k <- k[k>=2]
   }
   
   #run NMF by sample and k
@@ -132,9 +141,17 @@ multiPCA <- function(obj.list, assay="RNA", slot="data", k=4:5,
   nc <- lapply(obj.list, ncol)
   obj.list <- obj.list[nc > min.cells.per.sample]
   
-  if (is.null(hvg)) {
+  if (is.null(hvg) || length(hvg)<=1) {
     hvg <- findHVG(obj.list, nfeatures=nfeatures,
                              min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
+  }
+  #Unit check on k
+  if (!is.numeric(k)) {
+    stop("k must be a numeric vector")
+  }
+  if (sum(k==1) > 0) {
+    warning("k must be a vector of integers larger than 1. Dropping invalid values")
+    k <- k[k>=2]
   }
   
   #run PCA by sample
@@ -540,7 +557,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   
   set.seed(seed)
   
-  if (is.null(hvg)) {
+  if (is.null(hvg) || length(hvg)<=1) {
     hvg <- VariableFeatures(obj, assay=assay)
   }
   if (is.null(hvg) | length(hvg)==0) {
