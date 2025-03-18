@@ -483,6 +483,9 @@ plotMetaPrograms <- function(mp.res,
 #' @param subcategory GSEA subcategory
 #' @param species Species for GSEA analysis. For a list of the available species,
 #'     type \code{msigdbr::msigdbr_species()}
+#' @param custom.db A custom database of signatures, to be used instead of MSigDB. 
+#'     Provide custom.db as a named list, where the list names are the signature 
+#'     names, and the list elements are the signatures (as vectors).
 #' @param pval.thr Min p-value to include results
 #' @return Returns a table of enriched gene programs from GSEA
 #'
@@ -501,6 +504,7 @@ plotMetaPrograms <- function(mp.res,
 runGSEA <- function(genes, universe=NULL,
                     category="H", subcategory=NULL,
                     species="Homo sapiens",
+                    custom.db=NULL,
                     pval.thr=0.05) {
   
   
@@ -514,10 +518,17 @@ runGSEA <- function(genes, universe=NULL,
     genes <- genes[!duplicated(genes)]
   }
   
-  msig_df <- msigdbr::msigdbr(species = species, category = category, subcategory=subcategory)
-  msig_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
+  if (!is.null(custom.db)) {
+    #check format: should be a named list of signatures
+    if (!is.list(custom.db) || is.null(names(custom.db))) 
+      stop("custom.db should be a named list", call. = FALSE)
+    DB_list <- custom.db
+  } else {  # use signatures from mSigDB
+    msig_df <- msigdbr::msigdbr(species = species, category = category, subcategory=subcategory)
+    DB_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
+  }
   
-  fgRes <- fgsea::fora(pathways = msig_list,
+  fgRes <- fgsea::fora(pathways = DB_list,
                        genes = genes,
                        universe = universe)
   

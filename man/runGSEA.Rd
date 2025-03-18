@@ -10,6 +10,7 @@ runGSEA(
   category = "H",
   subcategory = NULL,
   species = "Homo sapiens",
+  custom.db = NULL,
   pval.thr = 0.05
 )
 }
@@ -24,6 +25,10 @@ runGSEA(
 
 \item{species}{Species for GSEA analysis. For a list of the available species,
 type \code{msigdbr::msigdbr_species()}}
+
+\item{custom.db}{A custom database of signatures, to be used instead of MSigDB. 
+Provide custom.db as a named list, where the list names are the signature 
+names, and the list elements are the signatures (as vectors).}
 
 \item{pval.thr}{Min p-value to include results}
 }
