@@ -418,12 +418,21 @@ plotMetaPrograms <- function(mp.res,
                             main = "Clustered Heatmap",
                             show_rownames = FALSE,
                             show_colnames = FALSE,
+                            drop_na_labels = FALSE,
                             ...) {
 
   J <- mp.res[["programs.similarity"]]
   tree <- mp.res[["programs.tree"]]
   cl_members <- mp.res[["programs.clusters"]]
   labs.order <- labels(as.dendrogram(tree))
+
+  # cut trees
+  if(drop_na_labels){
+    phylo_tree <- as.phylo(tree)
+    label_remove <- names(cl_members)[is.na(cl_members)]
+    phylo_tree <- drop.tip(phylo_tree, tip = label_remove)
+    tree <- as.hclust(phylo_tree)
+  }
   
   #downsample, to avoid overloading the graphics
   if (length(cl_members) > downsample) {
@@ -457,6 +466,9 @@ plotMetaPrograms <- function(mp.res,
   #Apply trimming to similarity for plotting  
   J[J<similarity.cutoff[1]] <- similarity.cutoff[1]
   J[J>similarity.cutoff[2]] <- similarity.cutoff[2]
+
+  # remove the NA rows
+  J<-J[!is.na(cl_members),!is.na(cl_members)]
   
   if (!showtree) {
     tree <- FALSE
