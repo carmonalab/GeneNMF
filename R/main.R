@@ -468,7 +468,9 @@ plotMetaPrograms <- function(mp.res,
   J[J>similarity.cutoff[2]] <- similarity.cutoff[2]
 
   # remove the NA rows
-  J<-J[!is.na(cl_members),!is.na(cl_members)]
+  if(drop_na_labels){
+    J<-J[!is.na(cl_members),!is.na(cl_members)]
+  }
   
   if (!showtree) {
     tree <- FALSE
