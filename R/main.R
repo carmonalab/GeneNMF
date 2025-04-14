@@ -590,9 +590,14 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
                     hvg=hvg, center=center, scale=scale)
-  
+
   model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed)
-  
+
+  cppversion <- packageVersion("RcppML")
+  if(cppversion >= "0.5.6"){
+    model<-list(w=model@w,d=model@d,h=model@h,tol=model@misc$tol,iter=model@misc$iter)
+  }
+
   rownames(model$h) <- paste0(new.reduction,"_",1:nrow(model$h))
   colnames(model$h) <- colnames(mat)
   
