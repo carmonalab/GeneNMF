@@ -249,3 +249,77 @@ weightCumul <- function(vector, weight.explained=0.5) {
     norm.cs <- norm.cs/max(norm.cs)
     x.sorted[norm.cs<weight.explained]
 }
+
+
+
+getCoph <- function(data, k_rank=2:15, n_subsets = 100, subset_size = 0.5) {
+  # data：expr mat
+  # k_rank：rang of k to serch
+  # n_subsets：number of subsets
+  ## requirements:
+  # get a cpp function to update consensus matrix
+source(NMF)
+source(Rcpp)
+source(Matrix)
+source(RcppML)
+source(ProjectSVR) 
+source(NMF)
+sourceCpp(code='
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericMatrix update_consensus_matrix_cpp(NumericVector subset_indices, NumericMatrix consensus_matrix, CharacterVector cluster_assignment) {
+int n = subset_indices.size();
+
+for (int j = 0; j < n; ++j) {
+  int idx_j = subset_indices[j] - 1; // R索引从1开始，C++索引从0开始
+  for (int l = j; l < n; ++l) {
+    int idx_l = subset_indices[l] - 1;
+    if (cluster_assignment[j] == cluster_assignment[l]) {
+      consensus_matrix(idx_j, idx_l) += 1;
+      consensus_matrix(idx_l, idx_j) += 1;
+    }
+  }
+}
+
+return consensus_matrix;
+}
+')
+  # body:
+  coph<-NULL
+  for(k in k_rank){
+    n <- ncol(data)  
+    consensus_matrix <- matrix(0, n, n)  
+    
+    for (i in 1:n_subsets) {
+      set.seed(10+i) 
+      subset_indices <- sample(1:n, size = ceiling(n * subset_size))
+      subset_data <- data[,subset_indices]
+      nmf_result <- RcppML::nmf(subset_data, k=k, seed = 10+i, tol = 1e-4)
+      cppversion <- packageVersion("RcppML")
+      if(cppversion >= "0.5.6"){
+        nmf_result<-list(w=nmf_result@w,d=nmf_result@d,h=nmf_result@h,tol=nmf_result@misc$tol,iter=nmf_result@misc$iter)
+      }
+      h <- nmf_result$h 
+      cluster_assignment <- row.names(h)[apply(h, 2, which.max)]  # confirmed cluster assignment 
+      # update consensus matrix
+      consensus_matrix <- update_consensus_matrix_cpp(subset_indices, consensus_matrix, cluster_assignment)
+    }
+    # calculate coph
+    consensus_matrix <- consensus_matrix / n_subsets
+    diag(consensus_matrix) <- 1
+    coph<-c(coph, NMF::cophcor(consensus_matrix))
+  }
+  return(coph)
+}
+
+optimal.rank <- function(coph){
+    coph_diff <- NULL
+  for (i in 2:length(coph)){
+    coph_diff <- c(coph_diff, coph[i-1]-coph[i])
+  }
+  k.best <- which.max(coph_diff)+1
+  return(k.best)
+}
+
