@@ -249,3 +249,15 @@ weightCumul <- function(vector, weight.explained=0.5) {
     norm.cs <- norm.cs/max(norm.cs)
     x.sorted[norm.cs<weight.explained]
 }
+
+check_cpp_version <- function(model) {
+  cppversion <- packageVersion("RcppML")
+  if(cppversion >= "0.5.6"){
+    model<-list(w=model@w, 
+                d=model@d, 
+                h=model@h, 
+                tol=model@misc$tol,
+                iter=model@misc$iter)
+  }
+  return(model)
+}
