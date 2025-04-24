@@ -36,6 +36,7 @@
 #' geneNMF_programs <- multiNMF(list(sampleObj), k=5)
 #' 
 #' @importFrom RcppML nmf
+#' @importFrom utils packageVersion
 #' @export  
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
@@ -573,6 +574,7 @@ runGSEA <- function(genes, universe=NULL,
 #' sampleObj <- runNMF(sampleObj, k=8)
 #' @importFrom RcppML nmf
 #' @importFrom methods new
+#' @importFrom utils packageVersion
 #' @export  
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
