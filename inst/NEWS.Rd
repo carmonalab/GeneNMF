@@ -2,6 +2,13 @@
 \title{News for package \pkg{GeneNMF}}
 \encoding{UTF-8}
 
+\section{Version 0.8.0}{
+  New in this version:
+  \itemize{
+    \item Compatibility with RcppML >= 0.5.6 (currently not on CRAN)
+  }
+}
+
 \section{Version 0.7.0}{
   New in this version:
   \itemize{
