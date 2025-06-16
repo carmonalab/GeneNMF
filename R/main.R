@@ -333,8 +333,8 @@ getMetaPrograms <- function(nmf.res,
   #Remove any empty meta-program
   if (remove.empty) {
     keep <- metaprograms.metrics$numberGenes > 0
-    metaprograms.metrics <- metaprograms.metrics[keep,]
-    metaprograms.composition <- metaprograms.composition[keep,]
+    metaprograms.metrics <- metaprograms.metrics[keep, ,drop=F]
+    metaprograms.composition <- metaprograms.composition[keep, ,drop=F]
     markers.consensus <- markers.consensus[keep]
     if (sum(!keep)>0) {
       message(sprintf("Dropped %i empty meta-programs", sum(!keep)))
@@ -352,9 +352,9 @@ getMetaPrograms <- function(nmf.res,
   names(markers.consensus) <- new.names
   
   #Reorder metrics and composition tables
-  metaprograms.metrics <- metaprograms.metrics[ord,]
+  metaprograms.metrics <- metaprograms.metrics[ord,,drop=F]
   rownames(metaprograms.metrics) <- new.names
-  metaprograms.composition <- metaprograms.composition[ord,]
+  metaprograms.composition <- metaprograms.composition[ord,,drop=F]
   rownames(metaprograms.composition) <- new.names
   
   map.index <- seq_along(old.names)
