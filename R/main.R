@@ -494,8 +494,8 @@ plotMetaPrograms <- function(mp.res,
 #'
 #' @param genes A vector of genes
 #' @param universe Background universe of gene symbols (passed on to \code{fgsea::fora})
-#' @param category GSEA main category (e.g. "H" or "C5")
-#' @param subcategory GSEA subcategory
+#' @param category GSEA main category/collection (e.g. "H" or "C5")
+#' @param subcategory GSEA subcategory/subcollection
 #' @param species Species for GSEA analysis. For a list of the available species,
 #'     type \code{msigdbr::msigdbr_species()}
 #' @param custom.db A custom database of signatures, to be used instead of MSigDB. 
@@ -512,7 +512,7 @@ plotMetaPrograms <- function(mp.res,
 #'    requireNamespace("msigdbr", quietly=TRUE)) {
 #'    gsea_res <- runGSEA(geneset,
 #'        universe=rownames(sampleObj),
-#'        category = "C8")
+#'        collection = "C8")
 #' }
 #' 
 #' @export  
@@ -539,7 +539,8 @@ runGSEA <- function(genes, universe=NULL,
       stop("custom.db should be a named list", call. = FALSE)
     DB_list <- custom.db
   } else {  # use signatures from mSigDB
-    msig_df <- msigdbr::msigdbr(species = species, category = category, subcategory=subcategory)
+    msig_df <- msigdbr::msigdbr(species = species, collection = category,
+                                subcollection=subcategory)
     DB_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
   }
   

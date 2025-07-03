@@ -19,9 +19,9 @@ runGSEA(
 
 \item{universe}{Background universe of gene symbols (passed on to \code{fgsea::fora})}
 
-\item{category}{GSEA main category (e.g. "H" or "C5")}
+\item{category}{GSEA main category/collection (e.g. "H" or "C5")}
 
-\item{subcategory}{GSEA subcategory}
+\item{subcategory}{GSEA subcategory/subcollection}
 
 \item{species}{Species for GSEA analysis. For a list of the available species,
 type \code{msigdbr::msigdbr_species()}}
@@ -48,7 +48,7 @@ if (requireNamespace("fgsea", quietly=TRUE) &
    requireNamespace("msigdbr", quietly=TRUE)) {
    gsea_res <- runGSEA(geneset,
        universe=rownames(sampleObj),
-       category = "C8")
+       collection = "C8")
 }
 
 }
