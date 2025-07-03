@@ -85,7 +85,7 @@ get_metaprogram_consensus <- function(nmf.wgt,
   #this is used to calculate gene confidence 
   nmf.genes.single <- getNMFgenes(nmf.res=nmf.wgt,
                                      specificity.weight=NULL,
-                                     weight.explained=0.8,
+                                     weight.explained=0.9,
                                      max.genes=1000) 
   
   markers.consensus <- lapply(seq(1, nMP), function(c) {
@@ -96,16 +96,18 @@ get_metaprogram_consensus <- function(nmf.wgt,
       mean <- mean(x)
       if (length(x) >=3) { #remove outliers (SD only with 3 or more points)
         sd <- sd(x)
-        x.out <- x[x>mean-2*sd & x<mean+2*sd]  
+        x.out <- x[x>mean-3*sd & x<mean+3*sd]  
       } else {
         x.out <- mean
       }
       
       mean(x.out)
     })
+    #first criterion: explain x% of total weight
     genes.avg <- sort(genes.avg, decreasing = T)
     genes.pass <- weightCumul(genes.avg, weight.explained=weight.explained)
     
+    #second criterion: consistently detect a given gene across runs
     this <- nmf.genes.single[which.samples]
     genes.only <- lapply(this, names)
     genes.sum <- sort(table(unlist(genes.only)), decreasing=T)
@@ -244,10 +246,9 @@ normVector <- function(vector) {
 
 weightCumul <- function(vector, weight.explained=0.5) {
     x.sorted <- sort(vector, decreasing = T)
-    cs <- cumsum(x.sorted)
-    norm.cs <- normVector(cs)
-    norm.cs <- norm.cs/max(norm.cs)
-    x.sorted[norm.cs<weight.explained]
+    norm.x <- normVector(x.sorted)
+    cs <- cumsum(norm.x)
+    norm.x[cs<weight.explained]
 }
 
 check_cpp_version <- function(model) {
