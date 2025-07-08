@@ -512,7 +512,7 @@ plotMetaPrograms <- function(mp.res,
 #'    requireNamespace("msigdbr", quietly=TRUE)) {
 #'    gsea_res <- runGSEA(geneset,
 #'        universe=rownames(sampleObj),
-#'        collection = "C8")
+#'        category = "C8")
 #' }
 #' 
 #' @export  
