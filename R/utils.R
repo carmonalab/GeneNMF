@@ -160,7 +160,7 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   metaprograms.length <- unlist(lapply(markers.consensus,length))
   
   #number of programs in meta-program
-  metaprograms.size <- as.character(table(cl_members))
+  metaprograms.size <- as.numeric(table(cl_members))
   
   metaprograms.metrics <- data.frame(
     sampleCoverage=unlist(sample.coverage),
