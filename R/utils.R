@@ -191,31 +191,6 @@ get_metaprogram_composition <- function(J=NULL,
   return(composition)
 }
 
-#Split positive and negative components of PCA, and reorder by variance
-nonNegativePCA <- function(pca, k) {
-  
-  pcaP <- pca$rotation
-  pcaN <- pca$rotation
-  colnames(pcaP) <- paste0(colnames(pcaP),"p")
-  colnames(pcaN) <- paste0(colnames(pcaN),"n")
-  
-  pcaP[pcaP<0] <- 0
-  pcaN[pcaN>0] <- 0
-  pcaN <- abs(pcaN)
-  
-  sumP <- apply(pcaP, 2, sum)
-  sumN <- apply(pcaN, 2, sum)
-  
-  wP <- pca$sdev * sumP/(sumP+sumN)
-  wN <- pca$sdev * sumN/(sumP+sumN)
-  wSort <- sort(c(wP,wN), decreasing = T)
-  
-  #Collate, re-rank components, and rescale coefficients
-  pca_abs <- cbind(pcaP, pcaN)
-  pca_abs <- pca_abs[,names(wSort)[1:k]]
-#  pca_abs <- apply(pca_abs, 2, function(x){x/sum(x)})
-  return(pca_abs)
-} 
 
 #Weighting factor matrix by feature specificity
 weightedLoadings <- function(nmf.res,

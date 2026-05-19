@@ -19,15 +19,17 @@
 #'     adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
 #'     will be excluded
 #' @param L1 L1 regularization term for NMF
+#' @param loss loss function: "mse" (default), "gp", "nb", "gamma",
+#'     "inverse_gaussian", or "tweedie". Requires RcppML >= 1.0.0
 #' @param min.cells.per.sample Minimum numer of cells per sample (smaller 
 #'     samples will be ignored)
 #' @param min.exp Minimum average log-expression value for retaining genes
 #' @param max.exp Maximum average log-expression value for retaining genes
-
-#' @param seed Random seed     
+#' @param seed Random seed  
+#' @param ... Advanced parameters for RcppML::nmf
 #'     
 #' @return Returns a list of NMF programs, one for each sample and for each
-#'     value of 'k'. The format of each program in the list follosw the
+#'     value of 'k'. The format of each program in the list follows the
 #'     structure of \code{\link[RcppML]{nmf}} factorization models.
 #'
 #' @examples
@@ -40,12 +42,14 @@
 #' @export  
 multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    hvg=NULL, nfeatures = 2000, L1=c(0,0),
+                   loss=c("mse", "gp", "nb", "gamma", "inverse_gaussian", "tweedie"),
                    min.exp=0.01, max.exp=3.0,
                    center=FALSE, scale=FALSE,
                    min.cells.per.sample = 10,
-                   hvg.blocklist=NULL, seed=123) {
+                   hvg.blocklist=NULL, seed=123, ...) {
   
   set.seed(seed)
+  loss <- loss[1]
   
   #exclude small samples
   nc <- lapply(obj.list, ncol)
@@ -65,6 +69,11 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
     k <- k[k>=2]
   }
   
+  RcppMLversion <- packageVersion("RcppML")
+  if (RcppMLversion < "1.0.0" && loss != "mse"){
+    message("Custom loss function only available for RcppML >= 1.0.0. Falling back to default")
+  }  
+  
   #run NMF by sample and k
   nmf.res <- lapply(obj.list, function(this) {
     
@@ -74,7 +83,13 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
     
     res.k <- lapply(k, function(k.this) {
       
-      model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE, seed=seed)
+      if (RcppMLversion >= "1.0.0") {
+        model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE, seed=seed, loss=loss, ...)
+      } else {
+        model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE, seed=seed)
+      }
+      
+      # convert model format (inconsistent between versions)
       model <- check_cpp_version(model)
       
       rownames(model$h) <- paste0("pattern",1:nrow(model$h))
@@ -90,96 +105,6 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   
   return(nmf.res)
 }  
-
-#' Run PCA on a list of Seurat objects
-#'
-#' Given a list of Seurat objects, run non-negative PCA factorization on 
-#' each sample individually.
-#'
-#' @param obj.list A list of Seurat objects
-#' @param k Number of target components for PCA
-#' @param assay Get data matrix from this assay
-#' @param slot Get data matrix from this slot (=layer)
-#' @param hvg List of pre-calculated variable genes to subset the matrix.
-#'     If hvg=NULL it calculates them automatically
-#' @param nfeatures Number of HVG, if calculate_hvg=TRUE
-#' @param center Whether to center the data matrix
-#' @param scale Whether to scale the data matrix
-#' @param hvg.blocklist Optionally takes a vector or list of vectors of gene
-#'     names. These genes will be ignored for HVG detection. This is useful
-#'     to mitigateeffect of genes associated with technical artifacts and
-#'     batch effects (e.g. mitochondrial), and to exclude TCR and BCR 
-#'     adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
-#'     will be excluded
-#' @param min.cells.per.sample Minimum numer of cells per sample (smaller 
-#'     samples will be ignored)
-#' @param min.exp Minimum average log-expression value for retaining genes
-#' @param max.exp Maximum average log-expression value for retaining genes
-
-#' @param seed Random seed     
-#'     
-#' @return Returns a list of non-negative PCA programs, one for each sample.
-#'     The format of each program in the list follows the
-#'     structure of \code{\link[RcppML]{nmf}} factorization models.
-#'
-#' @examples
-#' library(Seurat)
-#' data(sampleObj)
-#' geneNMF_programs <- multiPCA(list(sampleObj), k=5)
-#' 
-#' @importFrom irlba prcomp_irlba
-#' @export  
-
-multiPCA <- function(obj.list, assay="RNA", slot="data", k=4:5,
-                     hvg=NULL, nfeatures = 500,
-                     min.exp=0.01, max.exp=3.0,
-                     min.cells.per.sample = 10,
-                     center=FALSE, scale=FALSE,
-                     hvg.blocklist=NULL, seed=123) {
-  
-  set.seed(seed)
-  
-  #exclude small samples
-  nc <- lapply(obj.list, ncol)
-  obj.list <- obj.list[nc > min.cells.per.sample]
-  
-  if (is.null(hvg) || length(hvg)<=1) {
-    hvg <- findHVG(obj.list, nfeatures=nfeatures,
-                             min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
-  }
-  #Unit check on k
-  if (!is.numeric(k)) {
-    stop("k must be a numeric vector")
-  }
-  if (sum(k==1) > 0) {
-    warning("k must be a vector of integers larger than 1. Dropping invalid values")
-    k <- k[k>=2]
-  }
-  
-  #run PCA by sample
-  pca.res <- lapply(obj.list, function(this) {
-    
-    mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
-                                   hvg=hvg, center=center,
-                                   scale=scale, non_negative = FALSE)
-    res.k <- lapply(k, function(k.this) {
-      
-      pca <- prcomp_irlba(t(as.matrix(mat)), center=F, scale.=F, n=k.this)
-      rownames(pca$rotation) <- rownames(mat)
-      
-      nn_pca <- nonNegativePCA(pca, k=k.this) 
-      
-      npca.obj <- list(w = nn_pca, h = NULL)
-      npca.obj
-    })
-    names(res.k) <- paste0("k",k)
-    res.k
-  })
-  pca.res <- unlist(pca.res, recursive = FALSE)
-  
-  return(pca.res)
-}  
-
 
 #' Get list of genes for each NMF program
 #'
@@ -210,7 +135,6 @@ getNMFgenes <- function(nmf.res,
                         specificity.weight=5,
                         weight.explained=0.5,
                         max.genes=200) {
-  
   
   if (!is.null(specificity.weight)) {
     nmf.res <- weightedLoadings(nmf.res, specificity.weight=specificity.weight)
@@ -587,8 +511,11 @@ runGSEA <- function(genes, universe=NULL,
 #' @param new.reduction Name of new dimensionality reduction
 #' @param center Whether to center the data matrix
 #' @param scale Whether to scale the data matrix
+#' @param loss loss function: "mse" (default), "gp", "nb", "gamma",
+#'     "inverse_gaussian", or "tweedie". Requires RcppML >= 1.0.0
 #' @param L1 L1 regularization term for NMF
 #' @param seed Random seed
+#' @param ... Advanced parameters for RcppML::nmf
 #' @return Returns a Seurat object with a new dimensionality reduction (NMF)
 #'
 #' @examples
@@ -600,8 +527,9 @@ runGSEA <- function(genes, universe=NULL,
 #' @export  
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    new.reduction="NMF", seed=123,
+                   loss=c("mse", "gp", "nb", "gamma", "inverse_gaussian", "tweedie"),
                    L1=c(0,0), hvg=NULL,
-                   center=FALSE, scale=FALSE) {
+                   center=FALSE, scale=FALSE, ...) {
   
   
   set.seed(seed)
@@ -616,7 +544,18 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
                     hvg=hvg, center=center, scale=scale)
 
-  model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed)
+  #Check RcppML version
+  RcppMLversion <- packageVersion("RcppML")
+  if (RcppMLversion < "1.0.0" && loss != "mse"){
+    message("Custom loss function only available for RcppML >= 1.0.0. Falling back to default")
+  }  
+  
+  if (RcppMLversion >= "1.0.0") {
+    model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed, loss=loss, ...)
+  } else {
+    model <- RcppML::nmf(mat, k = k, L1 = L1, verbose=FALSE, seed = seed)
+  }
+    
   model <- check_cpp_version(model)
 
   rownames(model$h) <- paste0(new.reduction,"_",1:nrow(model$h))

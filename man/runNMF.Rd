@@ -11,10 +11,12 @@ runNMF(
   k = 10,
   new.reduction = "NMF",
   seed = 123,
+  loss = c("mse", "gp", "nb", "gamma", "inverse_gaussian", "tweedie"),
   L1 = c(0, 0),
   hvg = NULL,
   center = FALSE,
-  scale = FALSE
+  scale = FALSE,
+  ...
 )
 }
 \arguments{
@@ -30,6 +32,9 @@ runNMF(
 
 \item{seed}{Random seed}
 
+\item{loss}{loss function: "mse" (default), "gp", "nb", "gamma",
+"inverse_gaussian", or "tweedie". Requires RcppML >= 1.0.0}
+
 \item{L1}{L1 regularization term for NMF}
 
 \item{hvg}{Which genes to use for the reduction}
@@ -37,6 +42,8 @@ runNMF(
 \item{center}{Whether to center the data matrix}
 
 \item{scale}{Whether to scale the data matrix}
+
+\item{...}{Advanced parameters for RcppML::nmf}
 }
 \value{
 Returns a Seurat object with a new dimensionality reduction (NMF)

@@ -12,13 +12,15 @@ multiNMF(
   hvg = NULL,
   nfeatures = 2000,
   L1 = c(0, 0),
+  loss = c("mse", "gp", "nb", "gamma", "inverse_gaussian", "tweedie"),
   min.exp = 0.01,
   max.exp = 3,
   center = FALSE,
   scale = FALSE,
   min.cells.per.sample = 10,
   hvg.blocklist = NULL,
-  seed = 123
+  seed = 123,
+  ...
 )
 }
 \arguments{
@@ -36,6 +38,9 @@ If hvg=NULL it calculates them automatically}
 \item{nfeatures}{Number of HVG, if calculate_hvg=TRUE}
 
 \item{L1}{L1 regularization term for NMF}
+
+\item{loss}{loss function: "mse" (default), "gp", "nb", "gamma",
+"inverse_gaussian", or "tweedie". Requires RcppML >= 1.0.0}
 
 \item{min.exp}{Minimum average log-expression value for retaining genes}
 
@@ -56,10 +61,12 @@ adaptive immune(clone-specific) receptors. If set to `NULL` no genes
 will be excluded}
 
 \item{seed}{Random seed}
+
+\item{...}{Advanced parameters for RcppML::nmf}
 }
 \value{
 Returns a list of NMF programs, one for each sample and for each
-    value of 'k'. The format of each program in the list follosw the
+    value of 'k'. The format of each program in the list follows the
     structure of \code{\link[RcppML]{nmf}} factorization models.
 }
 \description{
