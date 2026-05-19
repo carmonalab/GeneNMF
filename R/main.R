@@ -504,23 +504,25 @@ plotMetaPrograms <- function(mp.res,
   return(ph)
 }  
 
-#' Run Gene set enrichment analysis
+#' Run gene-set overrepresentation analysis
 #'
-#' Utility function to run Gene Set Enrichment Analysis (GSEA) against gene 
-#' sets from MSigDB. Note: this is an optional function, which is conditional
+#' Utility function to run Gene Set Overrepresentation analysis (ORA) - based 
+#' on \code{fgsea::fora}  against gene sets from MSigDB.
+#' Note: using this function is conditional
 #' to the installation of suggested packages \code{fgsea} and \code{msigdbr}.
 #'
 #' @param genes A vector of genes
-#' @param universe Background universe of gene symbols (passed on to \code{fgsea::fora})
-#' @param category GSEA main category/collection (e.g. "H" or "C5")
-#' @param subcategory GSEA subcategory/subcollection
-#' @param species Species for GSEA analysis. For a list of the available species,
-#'     type \code{msigdbr::msigdbr_species()}
+#' @param universe Background universe of gene symbols
+#'     (passed on to \code{fgsea::fora})
+#' @param category MSigDB main category/collection (e.g. "H" or "C5")
+#' @param subcategory MSigDB subcategory/subcollection
+#' @param species Species for overrepresentation analysis. For a list of 
+#'     the available species, type \code{msigdbr::msigdbr_species()}
 #' @param custom.db A custom database of signatures, to be used instead of MSigDB. 
 #'     Provide custom.db as a named list, where the list names are the signature 
 #'     names, and the list elements are the signatures (as vectors).
 #' @param pval.thr Min p-value to include results
-#' @return Returns a table of enriched gene programs from GSEA
+#' @return Returns a table of enriched gene programs
 #'
 #' @examples
 #' \donttest{

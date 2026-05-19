@@ -2,7 +2,7 @@
 % Please edit documentation in R/main.R
 \name{runGSEA}
 \alias{runGSEA}
-\title{Run Gene set enrichment analysis}
+\title{Run gene-set overrepresentation analysis}
 \usage{
 runGSEA(
   genes,
@@ -17,14 +17,15 @@ runGSEA(
 \arguments{
 \item{genes}{A vector of genes}
 
-\item{universe}{Background universe of gene symbols (passed on to \code{fgsea::fora})}
+\item{universe}{Background universe of gene symbols
+(passed on to \code{fgsea::fora})}
 
-\item{category}{GSEA main category/collection (e.g. "H" or "C5")}
+\item{category}{MSigDB main category/collection (e.g. "H" or "C5")}
 
-\item{subcategory}{GSEA subcategory/subcollection}
+\item{subcategory}{MSigDB subcategory/subcollection}
 
-\item{species}{Species for GSEA analysis. For a list of the available species,
-type \code{msigdbr::msigdbr_species()}}
+\item{species}{Species for overrepresentation analysis. For a list of 
+the available species, type \code{msigdbr::msigdbr_species()}}
 
 \item{custom.db}{A custom database of signatures, to be used instead of MSigDB. 
 Provide custom.db as a named list, where the list names are the signature 
@@ -33,11 +34,12 @@ names, and the list elements are the signatures (as vectors).}
 \item{pval.thr}{Min p-value to include results}
 }
 \value{
-Returns a table of enriched gene programs from GSEA
+Returns a table of enriched gene programs
 }
 \description{
-Utility function to run Gene Set Enrichment Analysis (GSEA) against gene 
-sets from MSigDB. Note: this is an optional function, which is conditional
+Utility function to run Gene Set Overrepresentation analysis (ORA) - based 
+on \code{fgsea::fora}  against gene sets from MSigDB.
+Note: using this function is conditional
 to the installation of suggested packages \code{fgsea} and \code{msigdbr}.
 }
 \examples{
