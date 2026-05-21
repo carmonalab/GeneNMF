@@ -533,6 +533,7 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   
   
   set.seed(seed)
+  loss = loss[1]
   
   if (is.null(hvg) || length(hvg)<=1) {
     hvg <- VariableFeatures(obj, assay=assay)
