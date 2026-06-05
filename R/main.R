@@ -14,7 +14,7 @@
 #' @param scale Whether to scale the data matrix
 #' @param hvg.blocklist Optionally takes a vector or list of vectors of gene
 #'     names. These genes will be ignored for HVG detection. This is useful
-#'     to mitigateeffect of genes associated with technical artifacts and
+#'     to mitigate effect of genes associated with technical artifacts and
 #'     batch effects (e.g. mitochondrial), and to exclude TCR and BCR 
 #'     adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
 #'     will be excluded
@@ -47,12 +47,11 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
                    center=FALSE, scale=FALSE,
                    min.cells.per.sample = 10,
                    hvg.blocklist=NULL, seed=123, ...) {
-  
-  set.seed(seed)
+
   loss <- loss[1]
   
   #exclude small samples
-  nc <- lapply(obj.list, ncol)
+  nc <- unlist(lapply(obj.list, ncol))
   obj.list <- obj.list[nc > min.cells.per.sample]
   
   #check if HVG were manually specified, otherwise calculate
@@ -152,7 +151,7 @@ getNMFgenes <- function(nmf.res,
     
     #drop empty programs
     isna <- lapply(m, function(x) {all(is.na(x))})
-    m <- m[!as.numeric(isna)]
+    m <- m[!unlist(isna)]
     
     names(m) <- seq(1,length(m))
     m
@@ -184,16 +183,17 @@ getNMFgenes <- function(nmf.res,
 #'      retained in the consensus metaprograms
 #' @param remove.empty Whether to remove meta-programs with no genes above 
 #' confidence threshold      
-#' @return Returns a list with i) 'metaprograms.genes' top genes for each 
-#'     meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs 
-#'     statistics: a) freq. of samples where the MP is present, b) average 
-#'     silhouette width, c) mean similarity (cosine or Jaccard), d) number of 
-#'     genes in MP, e) number of gene programs in MP; iii) 'metaprogram.composition'
-#'     dataframe containing the number of individual for each sample that
-#'     contributed to the consensus MPs; iv) 'programs.similarity': matrix of 
-#'     similarities (Jaccard or cosine) between meta-programs; v) 'programs.tree': 
-#'     hierarchical clustering of meta-programs (hclust tree); vi) 
-#'     'programs.clusters': meta-program identity for each program
+#' @return Returns a list with i) 'metaprograms.genes' top genes for each
+#'     meta-program; ii) 'metaprograms.genes.weights' named numeric vectors of
+#'     normalized gene weights for each meta-program; iii) 'metaprograms.metrics'
+#'     dataframe with meta-programs statistics: a) freq. of samples where the MP
+#'     is present, b) average silhouette width, c) mean similarity (cosine or
+#'     Jaccard), d) number of genes in MP, e) number of gene programs in MP;
+#'     iv) 'metaprograms.composition' dataframe containing the number of programs
+#'     for each sample that contributed to the consensus MPs; v) 'programs.similarity':
+#'     matrix of similarities (Jaccard or cosine) between meta-programs; vi)
+#'     'programs.tree': hierarchical clustering of meta-programs (hclust tree);
+#'     vii) 'programs.clusters': meta-program identity for each program
 #'
 #' @examples
 #' library(Seurat)
@@ -393,14 +393,14 @@ plotMetaPrograms <- function(mp.res,
   #custom annotation colors
   if (is.null(annotation_colors)){
     annotation_colors_use <- annotation_colors
-  }
-  else if (!is(annotation_colors, "list")){
+  } else if (!is(annotation_colors, "list")){
     if(is(annotation_colors, "character") & length(annotation_colors)>=nMP){
       annotation_colors <- annotation_colors[seq(1, nMP)]
       annotation_colors_use <- list(Metaprogram=annotation_colors)
-    } 
-  }
-  else if (any("Metaprogram" %in% names(annotation_colors))){
+    } else {
+      stop("annotation_colors character vector must have at least nMP elements")
+    }
+  } else if (any("Metaprogram" %in% names(annotation_colors))){
     annotation_colors_use <- annotation_colors
   } else {
     stop("annotation_colors should be a character vector having same length with nMP!")
@@ -468,7 +468,7 @@ runGSEA <- function(genes, universe=NULL,
                     pval.thr=0.05) {
   
   
-  if (!requireNamespace("fgsea", quietly = TRUE) |
+  if (!requireNamespace("fgsea", quietly = TRUE) ||
       !requireNamespace("msigdbr", quietly = TRUE)) {
     stop("Function 'runGSEA' requires the 'fgsea' and 'msigdbr' packages.
             Please install them.", call. = FALSE)
@@ -530,15 +530,13 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
                    loss=c("mse", "gp", "nb", "gamma", "inverse_gaussian", "tweedie"),
                    L1=c(0,0), hvg=NULL,
                    center=FALSE, scale=FALSE, ...) {
-  
-  
-  set.seed(seed)
+
   loss = loss[1]
   
   if (is.null(hvg) || length(hvg)<=1) {
     hvg <- VariableFeatures(obj, assay=assay)
   }
-  if (is.null(hvg) | length(hvg)==0) {
+  if (is.null(hvg) || length(hvg)<=1) {
     stop("No variable features found. Please run FindVariableFeatures() or specify genes with 'hvg' parameter")
   }
   
@@ -659,7 +657,9 @@ findVariableFeatures_wfilters <- function(
   
   varfeat <- VariableFeatures(obj)
   
-  if (is.vector(genesBlockList)) {
+  if (is.list(genesBlockList)) {
+    genes.block <- unlist(genesBlockList) # user-provided list of vectors
+  } else if (is.vector(genesBlockList)) {
     genes.block <- genesBlockList # user-provided vector
   } else {
     genes.block <- NULL # No excluded genes

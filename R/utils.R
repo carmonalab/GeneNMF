@@ -7,14 +7,19 @@ jaccardIndex <- function(a, b) {
 
 jaccardSimilarity <- function(gene.vectors) {
   nprogs <- length(gene.vectors)
-  J <- matrix(data=0, ncol=nprogs, nrow = nprogs)
-  colnames(J) <- names(gene.vectors)
-  rownames(J) <- names(gene.vectors)
-  for (i in 1:nprogs) {
-    for (j in 1:nprogs) {
-      J[i,j] <- jaccardIndex(names(gene.vectors[[i]]), names(gene.vectors[[j]]))
-    }  
+  all.genes <- unique(unlist(lapply(gene.vectors, names)))
+  # binary membership matrix: genes x programs
+  mem <- matrix(0L, nrow=length(all.genes), ncol=nprogs,
+                dimnames=list(all.genes, names(gene.vectors)))
+  for (i in seq_len(nprogs)) {
+    mem[names(gene.vectors[[i]]), i] <- 1L
   }
+  # intersection counts via cross-product; union = |a| + |b| - intersection
+  inter <- crossprod(mem)
+  sizes <- colSums(mem)
+  union <- outer(sizes, sizes, "+") - inter
+  J <- inter / union
+  diag(J) <- 1
   return(J)
 }
 

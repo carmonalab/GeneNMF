@@ -43,16 +43,17 @@ retained in the consensus metaprograms}
 confidence threshold}
 }
 \value{
-Returns a list with i) 'metaprograms.genes' top genes for each 
-    meta-program; ii) 'metaprograms.metrics' dataframe with meta-programs 
-    statistics: a) freq. of samples where the MP is present, b) average 
-    silhouette width, c) mean similarity (cosine or Jaccard), d) number of 
-    genes in MP, e) number of gene programs in MP; iii) 'metaprogram.composition'
-    dataframe containing the number of individual for each sample that
-    contributed to the consensus MPs; iv) 'programs.similarity': matrix of 
-    similarities (Jaccard or cosine) between meta-programs; v) 'programs.tree': 
-    hierarchical clustering of meta-programs (hclust tree); vi) 
-    'programs.clusters': meta-program identity for each program
+Returns a list with i) 'metaprograms.genes' top genes for each
+    meta-program; ii) 'metaprograms.genes.weights' named numeric vectors of
+    normalized gene weights for each meta-program; iii) 'metaprograms.metrics'
+    dataframe with meta-programs statistics: a) freq. of samples where the MP
+    is present, b) average silhouette width, c) mean similarity (cosine or
+    Jaccard), d) number of genes in MP, e) number of gene programs in MP;
+    iv) 'metaprograms.composition' dataframe containing the number of programs
+    for each sample that contributed to the consensus MPs; v) 'programs.similarity':
+    matrix of similarities (Jaccard or cosine) between meta-programs; vi)
+    'programs.tree': hierarchical clustering of meta-programs (hclust tree);
+    vii) 'programs.clusters': meta-program identity for each program
 }
 \description{
 Run it over a list of NMF models obtained using \code{\link{multiNMF}}; it will 

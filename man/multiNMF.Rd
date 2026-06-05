@@ -55,7 +55,7 @@ samples will be ignored)}
 
 \item{hvg.blocklist}{Optionally takes a vector or list of vectors of gene
 names. These genes will be ignored for HVG detection. This is useful
-to mitigateeffect of genes associated with technical artifacts and
+to mitigate effect of genes associated with technical artifacts and
 batch effects (e.g. mitochondrial), and to exclude TCR and BCR 
 adaptive immune(clone-specific) receptors. If set to `NULL` no genes 
 will be excluded}
