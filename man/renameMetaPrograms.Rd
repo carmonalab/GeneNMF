@@ -25,11 +25,11 @@ rename them after filtering or dropping some of the MPs.
 library(Seurat)
 data(sampleObj)
 geneNMF_programs <- multiNMF(list(sampleObj), k = 5)
-geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nMP = 5)
+geneNMF_metaprograms <- getMetaPrograms(geneNMF_programs, nMP = 4)
 geneNMF_metaprograms_filtered <- dropMetaPrograms(geneNMF_metaprograms, dropMP = c("MP2"))
 geneNMF_metaprograms_renamed <- renameMetaPrograms(geneNMF_metaprograms_filtered,
- old.names = c("MP1", "MP3", "MP4", "MP5"),
- new.names = c("MP1", "MP2", "MP3", "MP4")
+ old.names = c("MP1", "MP3", "MP4"),
+ new.names = c("MP1", "MP2", "MP3")
 )
 
 }
