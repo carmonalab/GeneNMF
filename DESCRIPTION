@@ -38,3 +38,4 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.2
