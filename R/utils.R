@@ -30,9 +30,19 @@ cosineSimilarity <- function(gene.table) {
 }
 
 #Downsample vector, while keeping at least one element per class
-downsampleMin <- function(vector, size=500) {
+downsampleMin <- function(vector, size=500, seed=NULL) {
   if (length(vector) <= size) {
     return(vector)
+  }
+  #reproducible sampling, without altering the global random number stream
+  if (!is.null(seed)) {
+    if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      old.seed <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+      on.exit(assign(".Random.seed", old.seed, envir = globalenv()))
+    } else {
+      on.exit(rm(".Random.seed", envir = globalenv()))
+    }
+    set.seed(seed)
   }
   vecout <- names(vector)[!duplicated(vector)] #first match
   vector <- names(vector)
@@ -44,12 +54,56 @@ downsampleMin <- function(vector, size=500) {
   return(c(vecout, ss))
 }
 
+#Index of NMF components for the programs (columns) of a loadings matrix
+programIds <- function(matrix) {
+  ids <- colnames(matrix)
+  if (is.null(ids)) {
+    ids <- seq_len(ncol(matrix))
+  }
+  gsub("^pattern", "", ids)
+}
+
+#Sample of origin for NMF programs, named as [sample].k[k].[component]
+programSample <- function(programs) {
+  sub("\\.k\\d+\\.\\d+$", "", programs)
+}
+
+#Assign unique names to a list of samples
+nameSamples <- function(obj.list) {
+  names <- names(obj.list)
+  if (is.null(names)) {
+    names <- rep("", length(obj.list))
+  }
+  unnamed <- is.na(names) | names == ""
+  names[unnamed] <- paste0("sample", seq_along(obj.list))[unnamed]
+  if (any(duplicated(names))) {
+    stop("Sample names (names of obj.list) must be unique")
+  }
+  names(obj.list) <- names
+  return(obj.list)
+}
+
+#Name of the meta-program each program belongs to. 'programs.clusters' stores
+#the index of the MP in the list of meta-programs
+clusterNames <- function(mp.res) {
+  mp.names <- names(mp.res$metaprograms.genes)
+  cl_members <- mp.res$programs.clusters
+  if (any(cl_members > length(mp.names), na.rm = TRUE)) {
+    #objects from older versions, where the index was not updated on dropping MPs
+    cl_names <- ifelse(is.na(cl_members), NA, paste0("MP", cl_members))
+  } else {
+    cl_names <- mp.names[cl_members]
+  }
+  names(cl_names) <- names(cl_members)
+  return(cl_names)
+}
+
 #From list of genes to complete table, with imputed zeros
 geneList2table <- function(gene.vectors) {
   names <- names(gene.vectors)
   gene.vectors <- lapply(names, function(n) {
     g <- gene.vectors[[n]]
-    colnames(g) <- paste(n,seq(1,ncol(g)),sep=".")
+    colnames(g) <- paste(n,programIds(g),sep=".")
     g
   })
   gene.table <- Reduce(f=cbind, x=gene.vectors)
@@ -64,17 +118,20 @@ getEntropy <- function(tab, pseudo=0.1) {
 }
 
 #Find highly variable genes in a list of Seurat objects
-findHVG <- function(obj.list, nfeatures=2000,
+findHVG <- function(obj.list, nfeatures=2000, assay=NULL,
                     min.exp=0.01, max.exp=3.0, hvg.blocklist=NULL) {
   obj.list <- lapply(obj.list, function(x){
     
     ncalc <- min(5*nfeatures, nrow(x))
     x <- findVariableFeatures_wfilters(x, nfeatures=ncalc, min.exp=min.exp, max.exp=max.exp,
-                                       genesBlockList=hvg.blocklist)
+                                       genesBlockList=hvg.blocklist, assay=assay)
     x
   })
+  if (!is.null(assay)) {
+    assay <- rep(assay, length(obj.list))
+  }
   hvg <- Seurat::SelectIntegrationFeatures(obj.list,nfeatures = nfeatures,
-                                           verbose = FALSE)
+                                           assay = assay, verbose = FALSE)
   return(hvg)
 }
 
@@ -84,18 +141,22 @@ get_metaprogram_consensus <- function(nmf.wgt,
                                       min.confidence=0.5,
                                       weight.explained=0.5,
                                       max.genes=200,
-                                      cl_members=NULL) {
+                                      cl_members=NULL,
+                                      weight.explained.single=0.9,
+                                      max.genes.single=1000) {
   
-  #calculate genes that explain 80% of weight in individual samples
+  #calculate genes that explain 90% of weight in individual programs
   #this is used to calculate gene confidence 
   nmf.genes.single <- getNMFgenes(nmf.res=nmf.wgt,
                                      specificity.weight=NULL,
-                                     weight.explained=0.9,
-                                     max.genes=1000) 
+                                     weight.explained=weight.explained.single,
+                                     max.genes=max.genes.single) 
+  
+  gene.table.all <- geneList2table(nmf.wgt)
   
   markers.consensus <- lapply(seq(1, nMP), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
-    gene.table <- geneList2table(nmf.wgt)[,which.samples]
+    gene.table <- gene.table.all[,which.samples]
     
     genes.avg <- apply(as.matrix(gene.table), 1, function(x){
       mean <- mean(x)
@@ -117,7 +178,7 @@ get_metaprogram_consensus <- function(nmf.wgt,
     genes.only <- lapply(this, names)
     genes.sum <- sort(table(unlist(genes.only)), decreasing=T)
     genes.confidence <- genes.sum/length(this)
-    genes.confidence <- genes.confidence[genes.confidence > min.confidence]
+    genes.confidence <- genes.confidence[genes.confidence >= min.confidence]
     
     genes.pass <- genes.pass[names(genes.pass) %in% names(genes.confidence)]
     
@@ -133,10 +194,10 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
                                    markers.consensus=NULL,
                                    cl_members=NULL) {
   nMP <- length(markers.consensus)
-  all.samples <- unique(gsub("\\.k\\d+\\.\\d+","",colnames(J)))
+  all.samples <- unique(programSample(colnames(J)))
   sample.coverage <- lapply(seq(1, nMP), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
-    ss <- gsub("\\.k\\d+\\.\\d+","",which.samples)
+    ss <- programSample(which.samples)
     ss <- factor(ss, levels=all.samples)
     ss.tab <- table(ss)
     #Percent samples represented
@@ -146,7 +207,11 @@ get_metaprogram_metrics <- function(J=NULL, Jdist=NULL,
   
   #calculate MP silhouettes
   sil <- cluster::silhouette(cl_members, dist=Jdist)
-  sil.widths <- summary(sil)$clus.avg.widths
+  if (inherits(sil, "silhouette")) {
+    sil.widths <- summary(sil)$clus.avg.widths
+  } else { #not defined, e.g. for a single cluster
+    sil.widths <- rep(NA_real_, nMP)
+  }
   names(sil.widths) <- paste0("MetaProgram",seq(1,nMP))
   
   #calculate MP internal average similarity
@@ -184,10 +249,10 @@ get_metaprogram_composition <- function(J=NULL,
                                     markers.consensus=NULL,
                                     cl_members=NULL) {
   nMP <- length(markers.consensus)
-  all.samples <- unique(gsub("\\.k\\d+\\.\\d+","",colnames(J)))
+  all.samples <- unique(programSample(colnames(J)))
   sample.comp <- lapply(seq(1, nMP), function(c) {
     which.samples <- names(cl_members)[cl_members == c]
-    ss <- gsub("\\.k\\d+\\.\\d+","",which.samples)
+    ss <- programSample(which.samples)
     ss <- factor(ss, levels=all.samples)
     table(ss)
   })
@@ -202,8 +267,21 @@ weightedLoadings <- function(nmf.res,
                         specificity.weight=5) {
   
   nmf.wgt <- lapply(nmf.res, function(model) {
-    wgtLoad(model$w, w=specificity.weight)
+    wgt <- wgtLoad(model$w, w=specificity.weight)
+    #identify programs by the index of their NMF component
+    colnames(wgt) <- seq_len(ncol(wgt))
+    wgt
   })
+  #drop empty programs (all-zero loadings)
+  nempty <- 0
+  nmf.wgt <- lapply(nmf.wgt, function(wgt) {
+    keep <- colSums(wgt) > 0
+    nempty <<- nempty + sum(!keep)
+    wgt[, keep, drop=FALSE]
+  })
+  if (nempty > 0) {
+    message(sprintf("Dropped %i empty NMF programs (all-zero loadings)", nempty))
+  }
   return(nmf.wgt)
 }
 
@@ -224,11 +302,24 @@ normVector <- function(vector) {
   return(vector)
 }
 
+#Top elements that together explain a given fraction of total weight. The
+#element that crosses the threshold is included, to return at least one element
 weightCumul <- function(vector, weight.explained=0.5) {
     x.sorted <- sort(vector, decreasing = T)
     norm.x <- normVector(x.sorted)
+    norm.x <- norm.x[norm.x > 0]
     cs <- cumsum(norm.x)
-    norm.x[cs<weight.explained]
+    n <- sum(cs < weight.explained) + 1
+    head(norm.x, n)
+}
+
+#Input matrix for RcppML::nmf. Factorization of sparse matrices requires the
+#Matrix package to be attached; otherwise, use a dense matrix
+nmfInput <- function(mat) {
+  if (!is.matrix(mat) && !"package:Matrix" %in% search()) {
+    mat <- as.matrix(mat)
+  }
+  return(mat)
 }
 
 check_cpp_version <- function(model) {

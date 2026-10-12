@@ -19,14 +19,17 @@ importFrom(colorspace,hex)
 importFrom(dendextend,prune)
 importFrom(lsa,cosine)
 importFrom(methods,is)
-importFrom(methods,new)
 importFrom(pheatmap,pheatmap)
-importFrom(stats,as.dendrogram)
-importFrom(stats,as.dist)
-importFrom(stats,as.hclust)
-importFrom(stats,cutree)
-importFrom(stats,dist)
-importFrom(stats,hclust)
-importFrom(utils,head)
-importFrom(utils,packageVersion)
+importFrom(stats,
+  as.dendrogram,
+  as.dist,
+  as.hclust,
+  cutree,
+  dist,
+  hclust
+)
+importFrom(utils,
+  head,
+  packageVersion
+)
 importFrom(viridis,viridis)

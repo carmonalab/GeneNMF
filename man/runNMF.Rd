@@ -46,11 +46,21 @@ runNMF(
 \item{...}{Advanced parameters for RcppML::nmf}
 }
 \value{
-Returns a Seurat object with a new dimensionality reduction (NMF)
+Returns a Seurat object with a new dimensionality reduction (NMF).
+    Cell embeddings correspond to the NMF 'h' matrix, and feature loadings
+    to the 'w' matrix. The scaling diagonal 'd' of the NMF model is stored
+    as the standard deviation of the reduction (see \code{Stdev}), and
+    in its 'misc' slot together with the tolerance and number of
+    iterations of the model.
 }
 \description{
 Compute NMF embeddings for single-cell dataset, and store them in the Seurat data
 structure. They can be used as an alternative to PCA for downstream analyses.
+}
+\details{
+NMF is run on sparse matrices if the 'Matrix' package is 
+    attached (\code{library(Matrix)}), which reduces memory usage on 
+    large datasets. Otherwise, the data matrix is converted to dense format.
 }
 \examples{
 data(sampleObj)

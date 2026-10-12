@@ -3,8 +3,12 @@
 #' Given a list of Seurat objects, run non-negative matrix factorization on 
 #' each sample individually, over a range of target NMF components (k).
 #'
-#' @param obj.list A list of Seurat objects
-#' @param k Number of target components for NMF (can be a vector)
+#' @param obj.list A list of Seurat objects. If the list is named, the names
+#'     are used as sample identifiers; otherwise samples are named 
+#'     'sample1', 'sample2', etc.
+#' @param k Number of target components for NMF (can be a vector). Must be
+#'     integers larger than 1, and smaller than the number of cells and
+#'     genes in each sample
 #' @param assay Get data matrix from this assay
 #' @param slot Get data matrix from this slot (=layer)
 #' @param hvg List of pre-calculated variable genes to subset the matrix.
@@ -21,7 +25,7 @@
 #' @param L1 L1 regularization term for NMF
 #' @param loss loss function: "mse" (default), "gp", "nb", "gamma",
 #'     "inverse_gaussian", or "tweedie". Requires RcppML >= 1.0.0
-#' @param min.cells.per.sample Minimum numer of cells per sample (smaller 
+#' @param min.cells.per.sample Minimum number of cells per sample (smaller 
 #'     samples will be ignored)
 #' @param min.exp Minimum average log-expression value for retaining genes
 #' @param max.exp Maximum average log-expression value for retaining genes
@@ -31,6 +35,10 @@
 #' @return Returns a list of NMF programs, one for each sample and for each
 #'     value of 'k'. The format of each program in the list follows the
 #'     structure of \code{\link[RcppML]{nmf}} factorization models.
+#'
+#' @details NMF is run on sparse matrices if the 'Matrix' package is 
+#'     attached (\code{library(Matrix)}), which reduces memory usage on 
+#'     large datasets. Otherwise, the data matrix is converted to dense format.
 #'
 #' @examples
 #' library(Seurat)
@@ -50,22 +58,48 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
 
   loss <- loss[1]
   
-  #exclude small samples
-  nc <- unlist(lapply(obj.list, ncol))
-  obj.list <- obj.list[nc > min.cells.per.sample]
-  
-  #check if HVG were manually specified, otherwise calculate
-  if (is.null(hvg) || length(hvg)<=1) {
-    hvg <- findHVG(obj.list, nfeatures=nfeatures,
-                   min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
-  }
   #Unit check on k
   if (!is.numeric(k)) {
     stop("k must be a numeric vector")
   }
-  if (sum(k==1) > 0) {
+  k.invalid <- is.na(k) | k < 2 | k != round(k)
+  if (any(k.invalid)) {
     warning("k must be a vector of integers larger than 1. Dropping invalid values")
-    k <- k[k>=2]
+    k <- k[!k.invalid]
+  }
+  k <- unique(k)
+  if (length(k) == 0) {
+    stop("No valid values of k")
+  }
+  
+  #samples must have unique names, they are used to identify programs
+  obj.list <- nameSamples(obj.list)
+  
+  #exclude small samples
+  nc <- unlist(lapply(obj.list, ncol))
+  obj.list <- obj.list[nc >= min.cells.per.sample]
+  if (length(obj.list) == 0) {
+    stop(sprintf("No samples with at least %i cells (see 'min.cells.per.sample')",
+                 as.integer(min.cells.per.sample)))
+  }
+  
+  #check if HVG were manually specified, otherwise calculate
+  if (is.null(hvg) || length(hvg)<=1) {
+    hvg <- findHVG(obj.list, nfeatures=nfeatures, assay=assay,
+                   min.exp=min.exp, max.exp=max.exp, hvg.blocklist=hvg.blocklist)
+  }
+  #only use genes that are available in all samples
+  genes.common <- Reduce(intersect, lapply(obj.list, function(x) {
+    rownames(x[[assay]])
+  }))
+  hvg.missing <- setdiff(hvg, genes.common)
+  if (length(hvg.missing) > 0) {
+    warning(sprintf("%i genes in 'hvg' were not found in all samples and will be ignored",
+                    length(hvg.missing)))
+    hvg <- intersect(hvg, genes.common)
+  }
+  if (length(hvg) <= 1) {
+    stop("Not enough variable genes available in all samples")
   }
   
   RcppMLversion <- packageVersion("RcppML")
@@ -74,13 +108,22 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
   }  
   
   #run NMF by sample and k
-  nmf.res <- lapply(obj.list, function(this) {
+  nmf.res <- lapply(names(obj.list), function(sample) {
     
-    mat <- getDataMatrix(obj=this, assay=assay, slot=slot,
+    mat <- getDataMatrix(obj=obj.list[[sample]], assay=assay, slot=slot,
                       hvg=hvg, center=center,
                       scale=scale)
     
-    res.k <- lapply(k, function(k.this) {
+    mat <- nmfInput(mat)
+    
+    #rank must be smaller than matrix dimensions
+    k.sample <- k[k < min(dim(mat))]
+    if (length(k.sample) < length(k)) {
+      warning(sprintf("Sample %s: k must be smaller than the number of cells and genes. Skipping k=%s",
+                      sample, paste(setdiff(k, k.sample), collapse=",")))
+    }
+    
+    res.k <- lapply(k.sample, function(k.this) {
       
       if (RcppMLversion >= "1.0.0") {
         model <- RcppML::nmf(mat, k = k.this, L1 = L1, verbose=FALSE, seed=seed, loss=loss, ...)
@@ -97,10 +140,14 @@ multiNMF <- function(obj.list, assay="RNA", slot="data", k=5:6,
       colnames(model$w) <- paste0("pattern",1:ncol(model$w))
       model
     })
-    names(res.k) <- paste0("k",k)
+    names(res.k) <- paste0("k",k.sample)[seq_along(k.sample)]
     res.k
   })
+  names(nmf.res) <- names(obj.list)
   nmf.res <- unlist(nmf.res, recursive = FALSE)
+  if (length(nmf.res) == 0) {
+    stop("No NMF models could be calculated. Check the values of k")
+  }
   
   return(nmf.res)
 }  
@@ -137,24 +184,24 @@ getNMFgenes <- function(nmf.res,
   
   if (!is.null(specificity.weight)) {
     nmf.res <- weightedLoadings(nmf.res, specificity.weight=specificity.weight)
+  } else {
+    #use loadings as they are
+    nmf.res <- lapply(nmf.res, function(model) {
+      if (is.list(model)) model$w else model
+    })
   }
   
   nmf.genes <- lapply(nmf.res, function(model) {
     
-    gene.pass <- apply(model, 2, function(x) {
-      weightCumul(x, weight.explained = weight.explained)
-    })
-    
-    m <- lapply(gene.pass, function(g) {
+    m <- lapply(seq_len(ncol(model)), function(i) {
+      g <- weightCumul(model[,i], weight.explained = weight.explained)
       head(g, min(length(g), max.genes))
     })
+    #programs keep the index of their NMF component
+    names(m) <- programIds(model)
     
     #drop empty programs
-    isna <- lapply(m, function(x) {all(is.na(x))})
-    m <- m[!unlist(isna)]
-    
-    names(m) <- seq(1,length(m))
-    m
+    m[lengths(m) > 0]
   })
   
   nmf.genes <- unlist(nmf.genes, recursive = FALSE)
@@ -178,9 +225,11 @@ getNMFgenes <- function(nmf.res,
 #' @param weight.explained Fraction of NMF weights explained by selected
 #'     genes. For example if weight.explained=0.5, all genes that together
 #'     account for 50\% of NMF weights are used to return program signatures.
-#' @param min.confidence Percentage of programs in which a gene is seen 
+#' @param min.confidence Minimum fraction of programs in which a gene is seen 
 #'      (out of programs in the corresponding program tree branch/cluster), to be 
-#'      retained in the consensus metaprograms
+#'      retained in the consensus metaprograms. A gene is considered to be 
+#'      seen in a program if it is among the top genes that explain 90\% of 
+#'      the program weights.
 #' @param remove.empty Whether to remove meta-programs with no genes above 
 #' confidence threshold      
 #' @return Returns a list with i) 'metaprograms.genes' top genes for each
@@ -193,7 +242,8 @@ getNMFgenes <- function(nmf.res,
 #'     for each sample that contributed to the consensus MPs; v) 'programs.similarity':
 #'     matrix of similarities (Jaccard or cosine) between meta-programs; vi)
 #'     'programs.tree': hierarchical clustering of meta-programs (hclust tree);
-#'     vii) 'programs.clusters': meta-program identity for each program
+#'     vii) 'programs.clusters': meta-program identity for each program,
+#'     as an index to the meta-programs listed in 'metaprograms.genes'
 #'
 #' @examples
 #' library(Seurat)
@@ -232,6 +282,21 @@ getMetaPrograms <- function(nmf.res,
   } else {
     stop("Unknown distance metric.")
   }
+  
+  #Unit check on nMP
+  nprograms <- ncol(J)
+  if (nprograms < 2) {
+    stop("At least two NMF programs are required to calculate meta-programs")
+  }
+  if (!is.numeric(nMP) || length(nMP) != 1 || is.na(nMP) ||
+      nMP < 1 || nMP != round(nMP)) {
+    stop("nMP must be a positive integer")
+  }
+  if (nMP > nprograms) {
+    stop(sprintf("nMP (%i) cannot be larger than the number of NMF programs (%i)",
+                 as.integer(nMP), nprograms))
+  }
+  
   Jdist <- as.dist(1-J)
   #Cluster programs by gene overlap
   tree <- hclust(Jdist, method=hclust.method)
@@ -320,8 +385,11 @@ getMetaPrograms <- function(nmf.res,
 #' @param main Heatmap title 
 #' @param show_rownames Whether to display individual program names as rows
 #' @param show_colnames Whether to display individual program names as cols
+#' @param seed Random seed for downsampling programs (see 'downsample'). Set
+#'     to NULL to use the current state of the random number generator
 #' @param ... Additional parameters for pheatmap
-#' @return Returns a clustered heatmap of MP similarities, in ggplot2 format
+#' @return Returns a clustered heatmap of MP similarities, as a 'pheatmap'
+#'     object
 #'
 #' @examples
 #' library(Seurat)
@@ -346,35 +414,40 @@ plotMetaPrograms <- function(mp.res,
                             main = "Clustered Heatmap",
                             show_rownames = FALSE,
                             show_colnames = FALSE,
+                            seed = 123,
                             ...) {
 
   J <- mp.res[["programs.similarity"]]
   tree <- mp.res[["programs.tree"]]
-  cl_members <- mp.res[["programs.clusters"]]
+  #meta-program name for each program
+  cl_members <- clusterNames(mp.res)
   labs.order <- labels(as.dendrogram(tree))
   
   #downsample, to avoid overloading the graphics
   if (length(cl_members) > downsample) {
-    sid.keep <- downsampleMin(cl_members, size = downsample)
+    sid.keep <- downsampleMin(cl_members, size = downsample, seed = seed)
     labs.order <- labs.order[labs.order %in% sid.keep]
-    
-    cl_members <- cl_members[labs.order]
-    J <- J[labs.order, labs.order]
     
     #disable 'tree' for downsampled heatmap
     showtree <- FALSE
   }
   
-  cl_names <- names(cl_members)
-  cl_members[!is.na(cl_members)] <- paste0("MP",cl_members[!is.na(cl_members)])
-  names(cl_members) <- cl_names
+  if (showtree) {
+    #rows must be in the same order as the leaves of the tree object
+    plot.order <- tree$labels
+  } else {
+    #without a tree, sort programs as in the hierarchical clustering
+    plot.order <- labs.order
+  }
+  cl_members <- cl_members[plot.order]
+  J <- J[plot.order, plot.order]
 
   #Recover order of MP clusters
   cluster.order <- unique(cl_members[labs.order])
   nMP <- length(cluster.order)
   
   #Gaps for heatmap
-  diffs <- diff(as.integer(as.factor(cl_members))) 
+  diffs <- diff(as.integer(factor(cl_members, levels=cluster.order)))
   gaps <- which(diffs != 0)
   
   #Annotation column
@@ -433,11 +506,16 @@ plotMetaPrograms <- function(mp.res,
 #' Utility function to run Gene Set Overrepresentation analysis (ORA) - based 
 #' on \code{fgsea::fora}  against gene sets from MSigDB.
 #' Note: using this function is conditional
-#' to the installation of suggested packages \code{fgsea} and \code{msigdbr}.
+#' to the installation of the suggested package \code{fgsea}; the 
+#' \code{msigdbr} package is also required, unless a custom database
+#' of signatures is provided.
 #'
 #' @param genes A vector of genes
 #' @param universe Background universe of gene symbols
-#'     (passed on to \code{fgsea::fora})
+#'     (passed on to \code{fgsea::fora}). It is recommended to provide
+#'     the set of genes that could be detected in your experiment (e.g. 
+#'     all genes in your dataset). If NULL, all genes in the signature 
+#'     database are used as universe.
 #' @param category MSigDB main category/collection (e.g. "H" or "C5")
 #' @param subcategory MSigDB subcategory/subcollection
 #' @param species Species for overrepresentation analysis. For a list of 
@@ -468,11 +546,15 @@ runGSEA <- function(genes, universe=NULL,
                     pval.thr=0.05) {
   
   
-  if (!requireNamespace("fgsea", quietly = TRUE) ||
-      !requireNamespace("msigdbr", quietly = TRUE)) {
-    stop("Function 'runGSEA' requires the 'fgsea' and 'msigdbr' packages.
-            Please install them.", call. = FALSE)
-  }  
+  if (!requireNamespace("fgsea", quietly = TRUE)) {
+    stop("Function 'runGSEA' requires the 'fgsea' package. Please install it.",
+         call. = FALSE)
+  }
+  if (is.null(custom.db) && !requireNamespace("msigdbr", quietly = TRUE)) {
+    stop("Function 'runGSEA' requires the 'msigdbr' package to use MSigDB signatures.
+            Please install it, or provide a custom database with 'custom.db'.",
+         call. = FALSE)
+  }
   
   if (any(duplicated(genes))) {
     genes <- genes[!duplicated(genes)]
@@ -487,6 +569,11 @@ runGSEA <- function(genes, universe=NULL,
     msig_df <- msigdbr::msigdbr(species = species, collection = category,
                                 subcollection=subcategory)
     DB_list <- split(x=msig_df$gene_symbol, f=msig_df$gs_name)
+  }
+  
+  if (is.null(universe)) {
+    message("No 'universe' specified, using all genes in the signature database")
+    universe <- unique(unlist(DB_list))
   }
   
   fgRes <- fgsea::fora(pathways = DB_list,
@@ -516,13 +603,21 @@ runGSEA <- function(genes, universe=NULL,
 #' @param L1 L1 regularization term for NMF
 #' @param seed Random seed
 #' @param ... Advanced parameters for RcppML::nmf
-#' @return Returns a Seurat object with a new dimensionality reduction (NMF)
+#' @return Returns a Seurat object with a new dimensionality reduction (NMF).
+#'     Cell embeddings correspond to the NMF 'h' matrix, and feature loadings
+#'     to the 'w' matrix. The scaling diagonal 'd' of the NMF model is stored
+#'     as the standard deviation of the reduction (see \code{Stdev}), and
+#'     in its 'misc' slot together with the tolerance and number of
+#'     iterations of the model.
+#'
+#' @details NMF is run on sparse matrices if the 'Matrix' package is 
+#'     attached (\code{library(Matrix)}), which reduces memory usage on 
+#'     large datasets. Otherwise, the data matrix is converted to dense format.
 #'
 #' @examples
 #' data(sampleObj)
 #' sampleObj <- runNMF(sampleObj, k=8)
 #' @importFrom RcppML nmf
-#' @importFrom methods new
 #' @importFrom utils packageVersion
 #' @export  
 runNMF <- function(obj, assay="RNA", slot="data", k=10,
@@ -539,9 +634,19 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   if (is.null(hvg) || length(hvg)<=1) {
     stop("No variable features found. Please run FindVariableFeatures() or specify genes with 'hvg' parameter")
   }
+  hvg.missing <- setdiff(hvg, rownames(obj[[assay]]))
+  if (length(hvg.missing) > 0) {
+    warning(sprintf("%i genes in 'hvg' were not found in the object and will be ignored",
+                    length(hvg.missing)))
+    hvg <- setdiff(hvg, hvg.missing)
+  }
+  if (length(hvg) <= 1) {
+    stop("Not enough variable genes available in the object")
+  }
   
   mat <- getDataMatrix(obj=obj, assay=assay, slot=slot,
                     hvg=hvg, center=center, scale=scale)
+  mat <- nmfInput(mat)
 
   #Check RcppML version
   RcppMLversion <- packageVersion("RcppML")
@@ -564,13 +669,15 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
   colnames(model$w) <- paste0(new.reduction,"_",1:ncol(model$w))
   
   #New dim reduction
-  obj@reductions[[new.reduction]] <- new("DimReduc",
-                                         cell.embeddings = t(model$h),
-                                         feature.loadings = model$w,
-                                         assay.used = assay,
-                                         stdev = model$d,
-                                         key = paste0(new.reduction,"_"),
-                                         global = FALSE)
+  obj[[new.reduction]] <- CreateDimReducObject(embeddings = t(model$h),
+                                               loadings = model$w,
+                                               assay = assay,
+                                               stdev = model$d,
+                                               key = paste0(new.reduction,"_"),
+                                               global = FALSE,
+                                               misc = list(d = model$d,
+                                                           tol = model$tol,
+                                                           iter = model$iter))
   return(obj)
 }  
 
@@ -588,8 +695,9 @@ runNMF <- function(obj, assay="RNA", slot="data", k=10,
 #' @param scale Whether to scale the data matrix
 #' @param non_negative Enforce non-negative values for NMF
 #'     
-#' @return Returns a sparse data matrix (cells per genes), subset 
-#' according to the given parameters
+#' @return Returns a data matrix (genes by cells), subset according to the 
+#'     given parameters. Sparse matrices are returned in sparse format, 
+#'     unless centering or scaling are applied.
 #'
 #' @examples
 #' data(sampleObj)
@@ -607,14 +715,16 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
   #subset on HVG
   if (!is.null(hvg)) mat <- mat[hvg,]
   
-  #Center and rescale
-  mat <- t(scale(Matrix::t(mat), center=center, scale=scale))
+  #Center and rescale (returns a dense matrix)
+  if (center || scale) {
+    mat <- t(scale(Matrix::t(mat), center=center, scale=scale))
+  }
   
   #check scaling with rowsum=0 (gives NaN)
   if (scale) {
     mat[is.na(mat)] <- 0
   }
-  if (non_negative) {
+  if (non_negative && min(mat) < 0) {
     mat[mat<0] <- 0
   }
   return(mat)
@@ -634,6 +744,8 @@ getDataMatrix <- function(obj, assay="RNA", slot="data", hvg=NULL,
 #'     (e.g. mitochondrial, heat-shock response). If set to `NULL` no genes will be excluded
 #' @param min.exp Minimum average normalized expression for HVG. If lower, the gene will be excluded
 #' @param max.exp Maximum average normalized expression for HVG. If higher, the gene will be excluded
+#' @param assay Assay to calculate variable features on. If NULL, uses the 
+#'     default assay of the object
 #' @return Returns the input Seurat object \code{obj} with the calculated highly 
 #'     variable features accessible through \code{VariableFeatures(obj)} 
 #' @examples
@@ -648,14 +760,17 @@ findVariableFeatures_wfilters <- function(
     nfeatures=2000,
     genesBlockList=NULL,
     min.exp=0.01,
-    max.exp=3)
+    max.exp=3,
+    assay=NULL)
 {
   
-  assay <- DefaultAssay(obj)
+  if (is.null(assay)) {
+    assay <- DefaultAssay(obj)
+  }
   #Calculate a fixed number of HVG, then filtered to nfeat at the end
-  obj <- Seurat::FindVariableFeatures(obj, nfeatures = 10000, verbose=FALSE)
+  obj <- Seurat::FindVariableFeatures(obj, assay=assay, nfeatures = 10000, verbose=FALSE)
   
-  varfeat <- VariableFeatures(obj)
+  varfeat <- VariableFeatures(obj, assay=assay)
   
   if (is.list(genesBlockList)) {
     genes.block <- unlist(genesBlockList) # user-provided list of vectors
@@ -667,13 +782,15 @@ findVariableFeatures_wfilters <- function(
   
   varfeat <- setdiff(varfeat, genes.block)
   #Also remove genes that are very poorly or always expressed
-  means <- apply(GetAssayData(obj, assay=assay, layer="data")[varfeat,], 1, mean)
+  means <- Matrix::rowMeans(GetAssayData(obj, assay=assay, layer="data")[varfeat, , drop=FALSE])
   removeGenes2 <- names(means[means<min.exp | means>max.exp])
   
   varfeat <- setdiff(varfeat, removeGenes2)
-  n <- min(length(varfeat), nfeatures)
+  if (length(varfeat) == 0) {
+    warning("No variable features passed the filters. Check 'min.exp' and 'max.exp'")
+  }
   
-  VariableFeatures(obj) <- varfeat[1:n]
+  VariableFeatures(obj, assay=assay) <- head(varfeat, nfeatures)
   
   return(obj)
 }  
@@ -712,21 +829,34 @@ dropMetaPrograms <- function(mp.res,
     warning(message)
   }
   
+  #meta-program name for each program (NA for programs not assigned to MPs)
+  cl_names <- clusterNames(mp.res)
+  which.drop <- cl_names %in% todrop | is.na(cl_names)
+  drop.row <- names(cl_names)[which.drop]
+  cl_names <- cl_names[!which.drop]
+  if (length(keep) == 0 || length(cl_names) < 2) {
+    stop("Cannot drop all meta-programs")
+  }
+  
   #drop gene lists
   mp.res$metaprograms.genes[todrop] <- NULL
   mp.res$metaprograms.genes.weights[todrop] <- NULL
   #drop from metrics
-  mp.res$metaprograms.metrics <- mp.res$metaprograms.metrics[keep, ]
+  mp.res$metaprograms.metrics <- mp.res$metaprograms.metrics[keep, , drop=F]
+  #drop from composition
+  mp.res$metaprograms.composition <- mp.res$metaprograms.composition[keep, , drop=F]
   
   #drop from the tree (prune)
   tree <- mp.res$programs.tree
-  which.drop <- paste0("MP", mp.res$programs.clusters) %in% c(todrop,"MPNA")
-  drop.row <- mp.res$programs.clusters[which.drop]
+  dend <- as.dendrogram(tree)
+  if (length(drop.row) > 0) {
+    dend <- prune(dend, drop.row)
+  }
   
-  dend <- prune(as.dendrogram(tree), names(drop.row))
-  
-  #drop from the clusters
-  mp.res$programs.clusters <- mp.res$programs.clusters[!names(mp.res$programs.clusters) %in% names(drop.row)]
+  #drop from the clusters, and update their index to the remaining MPs
+  cl_members <- match(cl_names, keep)
+  names(cl_members) <- names(cl_names)
+  mp.res$programs.clusters <- cl_members
   #drop from similarity matrix
   pk <- names(mp.res$programs.clusters)
   mp.res$programs.similarity <- mp.res$programs.similarity[pk, pk]
@@ -775,6 +905,9 @@ renameMetaPrograms <- function(mp.res, old.names = NULL, new.names = NULL) {
   } else if (length(old.names) != length(new.names)) {
     stop("old.names and new.names must have the same length.")
   }
+  if (any(duplicated(new.names))) {
+    stop("new.names must be unique.")
+  }
 
   markers.genes <- mp.res$metaprograms.genes
   markers.consensus <- mp.res$metaprograms.genes.weights
@@ -782,7 +915,8 @@ renameMetaPrograms <- function(mp.res, old.names = NULL, new.names = NULL) {
   metaprograms.composition <- mp.res$metaprograms.composition
   J <- mp.res$programs.similarity
   tree <- mp.res$programs.tree
-  cl_members <- mp.res$programs.clusters
+  #meta-program name for each program
+  cl_names <- clusterNames(mp.res)
 
   ord <- match(old.names, names(markers.genes))
 
@@ -795,11 +929,9 @@ renameMetaPrograms <- function(mp.res, old.names = NULL, new.names = NULL) {
   metaprograms.composition <- metaprograms.composition[ord, , drop = F]
   rownames(metaprograms.composition) <- new.names
 
-  map.index <- seq_along(old.names)
-  names(map.index) <- as.numeric(gsub("MP", "", old.names))
-  cl_members.new <- map.index[as.character(cl_members)]
-
-  names(cl_members.new) <- names(cl_members)
+  # update index of programs to the reordered MPs
+  cl_members.new <- match(cl_names, old.names)
+  names(cl_members.new) <- names(cl_names)
 
   # weights of individual genes in each MP
   markers.consensus <- lapply(markers.consensus, function(m) {

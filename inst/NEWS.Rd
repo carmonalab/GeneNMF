@@ -2,6 +2,23 @@
 \title{News for package \pkg{GeneNMF}}
 \encoding{UTF-8}
 
+\section{Version 0.9.99}{
+  New in this version:
+  \itemize{
+    \item Added tests for most functions (testthat)
+    \item Added 'renameMetaPrograms()' function
+    \item Add support for 'loss' parameter
+    \item Clarified that runGSEA wrapper does in fact perform over-representation analysis (ORA)
+    \item Samples in unnamed lists are now named 'sample1', 'sample2', etc. by multiNMF(); previously, meta-program metrics were incorrect for unnamed lists
+    \item Gene selection for programs now includes the gene that crosses the 'weight.explained' threshold, so that programs always have at least one gene; programs keep the index of their NMF component
+    \item 'min.confidence' is now an inclusive threshold (>=)
+    \item dropMetaPrograms(), renameMetaPrograms() and plotMetaPrograms() now work with custom meta-program names; 'programs.clusters' is an index to the list of meta-programs
+    \item plotMetaPrograms(showtree=FALSE) sorts programs by hierarchical clustering
+    \item Improved checks on input parameters ('k', 'nMP', 'hvg', 'min.cells.per.sample')
+  }
+}
+
+
 \section{Version 0.9.2}{
   New in this version:
   \itemize{

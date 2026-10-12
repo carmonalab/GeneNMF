@@ -24,13 +24,17 @@ multiNMF(
 )
 }
 \arguments{
-\item{obj.list}{A list of Seurat objects}
+\item{obj.list}{A list of Seurat objects. If the list is named, the names
+are used as sample identifiers; otherwise samples are named 
+'sample1', 'sample2', etc.}
 
 \item{assay}{Get data matrix from this assay}
 
 \item{slot}{Get data matrix from this slot (=layer)}
 
-\item{k}{Number of target components for NMF (can be a vector)}
+\item{k}{Number of target components for NMF (can be a vector). Must be
+integers larger than 1, and smaller than the number of cells and
+genes in each sample}
 
 \item{hvg}{List of pre-calculated variable genes to subset the matrix.
 If hvg=NULL it calculates them automatically}
@@ -50,7 +54,7 @@ If hvg=NULL it calculates them automatically}
 
 \item{scale}{Whether to scale the data matrix}
 
-\item{min.cells.per.sample}{Minimum numer of cells per sample (smaller 
+\item{min.cells.per.sample}{Minimum number of cells per sample (smaller 
 samples will be ignored)}
 
 \item{hvg.blocklist}{Optionally takes a vector or list of vectors of gene
@@ -72,6 +76,11 @@ Returns a list of NMF programs, one for each sample and for each
 \description{
 Given a list of Seurat objects, run non-negative matrix factorization on 
 each sample individually, over a range of target NMF components (k).
+}
+\details{
+NMF is run on sparse matrices if the 'Matrix' package is 
+    attached (\code{library(Matrix)}), which reduces memory usage on 
+    large datasets. Otherwise, the data matrix is converted to dense format.
 }
 \examples{
 library(Seurat)

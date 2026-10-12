@@ -35,9 +35,11 @@ account for 50\% of NMF weights are used to return program signatures.}
 
 \item{hclust.method}{Method to build similarity tree between individual programs}
 
-\item{min.confidence}{Percentage of programs in which a gene is seen 
+\item{min.confidence}{Minimum fraction of programs in which a gene is seen 
 (out of programs in the corresponding program tree branch/cluster), to be 
-retained in the consensus metaprograms}
+retained in the consensus metaprograms. A gene is considered to be 
+seen in a program if it is among the top genes that explain 90\% of 
+the program weights.}
 
 \item{remove.empty}{Whether to remove meta-programs with no genes above 
 confidence threshold}
@@ -53,7 +55,8 @@ Returns a list with i) 'metaprograms.genes' top genes for each
     for each sample that contributed to the consensus MPs; v) 'programs.similarity':
     matrix of similarities (Jaccard or cosine) between meta-programs; vi)
     'programs.tree': hierarchical clustering of meta-programs (hclust tree);
-    vii) 'programs.clusters': meta-program identity for each program
+    vii) 'programs.clusters': meta-program identity for each program,
+    as an index to the meta-programs listed in 'metaprograms.genes'
 }
 \description{
 Run it over a list of NMF models obtained using \code{\link{multiNMF}}; it will 

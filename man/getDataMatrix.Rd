@@ -31,8 +31,9 @@ all genes}
 \item{non_negative}{Enforce non-negative values for NMF}
 }
 \value{
-Returns a sparse data matrix (cells per genes), subset 
-according to the given parameters
+Returns a data matrix (genes by cells), subset according to the 
+    given parameters. Sparse matrices are returned in sparse format, 
+    unless centering or scaling are applied.
 }
 \description{
 Get the gene expression matrix from a Seurat object, optionally centered

@@ -9,7 +9,8 @@ findVariableFeatures_wfilters(
   nfeatures = 2000,
   genesBlockList = NULL,
   min.exp = 0.01,
-  max.exp = 3
+  max.exp = 3,
+  assay = NULL
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ of genes associated with technical artifacts or batch effects
 \item{min.exp}{Minimum average normalized expression for HVG. If lower, the gene will be excluded}
 
 \item{max.exp}{Maximum average normalized expression for HVG. If higher, the gene will be excluded}
+
+\item{assay}{Assay to calculate variable features on. If NULL, uses the 
+default assay of the object}
 }
 \value{
 Returns the input Seurat object \code{obj} with the calculated highly 

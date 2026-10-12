@@ -18,7 +18,10 @@ runGSEA(
 \item{genes}{A vector of genes}
 
 \item{universe}{Background universe of gene symbols
-(passed on to \code{fgsea::fora})}
+(passed on to \code{fgsea::fora}). It is recommended to provide
+the set of genes that could be detected in your experiment (e.g. 
+all genes in your dataset). If NULL, all genes in the signature 
+database are used as universe.}
 
 \item{category}{MSigDB main category/collection (e.g. "H" or "C5")}
 
@@ -40,7 +43,9 @@ Returns a table of enriched gene programs
 Utility function to run Gene Set Overrepresentation analysis (ORA) - based 
 on \code{fgsea::fora}  against gene sets from MSigDB.
 Note: using this function is conditional
-to the installation of suggested packages \code{fgsea} and \code{msigdbr}.
+to the installation of the suggested package \code{fgsea}; the 
+\code{msigdbr} package is also required, unless a custom database
+of signatures is provided.
 }
 \examples{
 \donttest{

@@ -1,7 +1,7 @@
 Package: GeneNMF
 Type: Package
 Title: Non-Negative Matrix Factorization for Single-Cell Omics
-Version: 0.9.6
+Version: 0.9.99
 Authors@R: c(
   person('Massimo', 'Andreatta',
     email = 'massimo.andreatta@unige.ch',
@@ -30,12 +30,13 @@ Imports: RcppML,
 Suggests: knitr,
     rmarkdown,
     fgsea,
-    msigdbr
+    msigdbr,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://github.com/carmonalab/GeneNMF
 BugReports: https://github.com/carmonalab/GeneNMF/issues
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.1.1

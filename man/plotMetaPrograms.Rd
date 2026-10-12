@@ -15,6 +15,7 @@ plotMetaPrograms(
   main = "Clustered Heatmap",
   show_rownames = FALSE,
   show_colnames = FALSE,
+  seed = 123,
   ...
 )
 }
@@ -40,10 +41,14 @@ the graphics}
 
 \item{show_colnames}{Whether to display individual program names as cols}
 
+\item{seed}{Random seed for downsampling programs (see 'downsample'). Set
+to NULL to use the current state of the random number generator}
+
 \item{...}{Additional parameters for pheatmap}
 }
 \value{
-Returns a clustered heatmap of MP similarities, in ggplot2 format
+Returns a clustered heatmap of MP similarities, as a 'pheatmap'
+    object
 }
 \description{
 Generates a clustered heatmap for meta-program similarities (by Jaccard 
